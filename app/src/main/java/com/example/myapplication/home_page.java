@@ -13,8 +13,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+// 🔹 OSM
+import org.osmdroid.config.Configuration;
+
 public class home_page extends AppCompatActivity {
-    private TextView tvCasesCount, tvDateDay, tvDateMonthYear, tvUserCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,16 +30,25 @@ public class home_page extends AppCompatActivity {
             return insets;
         });
 
-        updateDashboardStats();
-    }
+        // 🔹 初始化 osmdroid
+        Configuration.getInstance()
+                .setUserAgentValue(getPackageName());
 
+        updateDashboardStats();
+
+        // 🔹 在 home_page.xml 的 map_container 开 fragment
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.map_container, new fragment_map())
+                .commit();
+    }
 
     private void updateDashboardStats() {
 
-        tvCasesCount = findViewById(R.id.tvCasesCount);
-        tvDateDay = findViewById(R.id.tvDateDay);
-        tvDateMonthYear = findViewById(R.id.tvDateMonthYear);
-        tvUserCount = findViewById(R.id.tvUserCount);
+        TextView tvCasesCount = findViewById(R.id.tvCasesCount);
+        TextView tvDateDay = findViewById(R.id.tvDateDay);
+        TextView tvDateMonthYear = findViewById(R.id.tvDateMonthYear);
+        TextView tvUserCount = findViewById(R.id.tvUserCount);
 
         Date currentDate = new Date();
 
