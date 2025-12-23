@@ -3,7 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/landing_nav_graph"
-    app:startDestination="@id/landing1">
+    app:startDestination="@id/landing_host">
+
+    <fragment
+        android:id="@+id/landing_host"
+        android:name="com.example.myapplication.LandingHostFragment"
+        android:label="fragment_landing_host"
+        tools:layout="@layout/fragment_landing_host" />
 
     <fragment
         android:id="@+id/landing1"
