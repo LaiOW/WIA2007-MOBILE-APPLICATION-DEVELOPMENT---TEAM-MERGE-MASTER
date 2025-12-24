@@ -11,9 +11,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class FavoritesFragment extends Fragment {
 
     private RecyclerView recyclerView;
@@ -27,14 +24,18 @@ public class FavoritesFragment extends Fragment {
         recyclerView = view.findViewById(R.id.recyclerViewFavorites);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // TODO: Load actual favorites data
-        List<String> mockData = new ArrayList<>();
-        mockData.add("Location A");
-        mockData.add("Location B");
-        
-        adapter = new FavoritesAdapter(mockData);
+        // Use the singleton manager to get data
+        adapter = new FavoritesAdapter(FavoritesManager.getInstance().getFavorites());
         recyclerView.setAdapter(adapter);
 
         return view;
+    }
+    
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
     }
 }

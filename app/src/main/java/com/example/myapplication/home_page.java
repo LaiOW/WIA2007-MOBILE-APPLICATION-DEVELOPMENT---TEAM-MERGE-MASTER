@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -65,44 +66,40 @@ public class home_page extends AppCompatActivity {
         checkLocationPermission();
 
         // 🔹 在 home_page.xml 的 map_container 开 fragment
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.map_container, new fragment_map())
-                .commit();
+        if (savedInstanceState == null) {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.map_container, new fragment_map())
+                    .commit();
+        }
 
         // 🔹 设置 Search 输入监听
-        etSearch.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH ||
-                        actionId == EditorInfo.IME_ACTION_DONE ||
-                        (event != null && event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-                    
-                    String addressString = etSearch.getText().toString();
-                    if (!addressString.isEmpty()) {
-                        searchLocation(addressString);
-                    }
-                    
-                    // 隐藏键盘
-                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
-                    return true;
+        etSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH ||
+                    actionId == EditorInfo.IME_ACTION_DONE ||
+                    (event != null && event.getAction() == KeyEvent.ACTION_DOWN && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                
+                String addressString = etSearch.getText().toString();
+                if (!addressString.isEmpty()) {
+                    searchLocation(addressString);
                 }
-                return false;
+                
+                // 隐藏键盘
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+                }
+                return true;
             }
+            return false;
         });
 
         // 🔹 设置 FAB 点击事件
         FloatingActionButton fabFavorites = findViewById(R.id.fabFavorites);
-        fabFavorites.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getSupportFragmentManager().beginTransaction()
-                        .replace(android.R.id.content, new FavoritesFragment())
-                        .addToBackStack(null)
-                        .commit();
-            }
-        });
+        fabFavorites.setOnClickListener(v -> getSupportFragmentManager().beginTransaction()
+                .add(android.R.id.content, new FavoritesFragment())
+                .addToBackStack(null)
+                .commit());
     }
 
     private void searchLocation(String locationName) {
@@ -113,6 +110,7 @@ public class home_page extends AppCompatActivity {
                 Address address = addressList.get(0);
                 double latitude = address.getLatitude();
                 double longitude = address.getLongitude();
+                String fullAddress = address.getAddressLine(0);
 
                 // 获取 fragment_map 实例并更新位置
                 Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.map_container);
@@ -120,7 +118,10 @@ public class home_page extends AppCompatActivity {
                     ((fragment_map) fragment).updateMapLocation(latitude, longitude);
                 }
                 
-                Toast.makeText(this, "Found: " + address.getAddressLine(0), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Found: " + fullAddress, Toast.LENGTH_SHORT).show();
+                
+                // 🔹 询问是否添加到收藏
+                showAddToFavoritesDialog(fullAddress);
 
             } else {
                 Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show();
@@ -129,6 +130,18 @@ public class home_page extends AppCompatActivity {
             e.printStackTrace();
             Toast.makeText(this, "Search error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void showAddToFavoritesDialog(String address) {
+        new AlertDialog.Builder(this)
+                .setTitle("Add to Favorites")
+                .setMessage("Do you want to save this location?\n\n" + address)
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    FavoritesManager.getInstance().addFavorite(address);
+                    Toast.makeText(home_page.this, "Added to favorites", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("No", null)
+                .show();
     }
 
     private void checkLocationPermission() {
