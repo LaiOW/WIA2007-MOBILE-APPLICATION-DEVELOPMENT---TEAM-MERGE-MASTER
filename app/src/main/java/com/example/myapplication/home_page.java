@@ -37,7 +37,7 @@ import java.util.Locale;
 // 🔹 OSM
 import org.osmdroid.config.Configuration;
 
-public class home_page extends AppCompatActivity {
+public class home_page extends AppCompatActivity implements FavoritesFragment.OnFavoriteSelectedListener {
 
     private static final int PERMISSION_REQUEST_CODE = 100;
     private TextView tvUserAddress;
@@ -81,7 +81,7 @@ public class home_page extends AppCompatActivity {
                 
                 String addressString = etSearch.getText().toString();
                 if (!addressString.isEmpty()) {
-                    searchLocation(addressString);
+                    searchLocation(addressString, true); // True means show add to favorites dialog
                 }
                 
                 // 隐藏键盘
@@ -102,7 +102,7 @@ public class home_page extends AppCompatActivity {
                 .commit());
     }
 
-    private void searchLocation(String locationName) {
+    private void searchLocation(String locationName, boolean showAddToFavorites) {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         try {
             List<Address> addressList = geocoder.getFromLocationName(locationName, 1);
@@ -121,7 +121,9 @@ public class home_page extends AppCompatActivity {
                 Toast.makeText(this, "Found: " + fullAddress, Toast.LENGTH_SHORT).show();
                 
                 // 🔹 询问是否添加到收藏
-                showAddToFavoritesDialog(fullAddress);
+                if (showAddToFavorites) {
+                    showAddToFavoritesDialog(fullAddress);
+                }
 
             } else {
                 Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show();
@@ -226,5 +228,12 @@ public class home_page extends AppCompatActivity {
         if (tvUserCount != null) {
             tvUserCount.setText("0");
         }
+    }
+
+    @Override
+    public void onFavoriteSelected(String address) {
+        // 当从收藏列表选中地址时，复用搜索逻辑但 不 显示添加对话框
+        etSearch.setText(address);
+        searchLocation(address, false);
     }
 }

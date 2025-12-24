@@ -14,9 +14,15 @@ import java.util.List;
 public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.ViewHolder> {
 
     private List<String> favoritesList;
+    private OnItemClickListener listener;
 
-    public FavoritesAdapter(List<String> favoritesList) {
+    public interface OnItemClickListener {
+        void onItemClick(String location);
+    }
+
+    public FavoritesAdapter(List<String> favoritesList, OnItemClickListener listener) {
         this.favoritesList = favoritesList;
+        this.listener = listener;
     }
 
     @NonNull
@@ -31,8 +37,15 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
         String location = favoritesList.get(position);
         holder.tvLocationName.setText(location);
 
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(location);
+            }
+        });
+
         holder.btnDelete.setOnClickListener(v -> {
             favoritesList.remove(position);
+            FavoritesManager.getInstance().removeFavorite(location);
             notifyItemRemoved(position);
             notifyItemRangeChanged(position, favoritesList.size());
         });
