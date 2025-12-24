@@ -8,9 +8,11 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,6 +21,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -100,6 +103,72 @@ public class home_page extends AppCompatActivity implements FavoritesFragment.On
                 .add(android.R.id.content, new FavoritesFragment())
                 .addToBackStack(null)
                 .commit());
+                
+        // 🔹 设置紧急呼叫按钮
+        Button btnCall = findViewById(R.id.BTcall);
+        btnCall.setOnClickListener(v -> showEmergencyDialog());
+    }
+
+    private void showEmergencyDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_emergency_options, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+
+        // Bind clicks
+        CardView cardMedical = dialogView.findViewById(R.id.cardMedical);
+        CardView cardAccident = dialogView.findViewById(R.id.cardAccident);
+        CardView cardMental = dialogView.findViewById(R.id.cardMental);
+        CardView cardOther = dialogView.findViewById(R.id.cardOther);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancelEmergency);
+
+        cardMedical.setOnClickListener(v -> {
+            handleEmergencySelection("Medical Emergency");
+            dialog.dismiss();
+        });
+
+        cardAccident.setOnClickListener(v -> {
+            handleEmergencySelection("Accident");
+            dialog.dismiss();
+        });
+
+        cardMental.setOnClickListener(v -> {
+            handleEmergencySelection("Mental Health Crisis");
+            dialog.dismiss();
+        });
+
+        cardOther.setOnClickListener(v -> {
+            dialog.dismiss(); // Close first dialog before opening input
+            showOtherEmergencyInput();
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+    
+    private void showOtherEmergencyInput() {
+        final EditText input = new EditText(this);
+        input.setHint("Describe emergency...");
+        
+        new AlertDialog.Builder(this)
+                .setTitle("Other Emergency")
+                .setView(input)
+                .setPositiveButton("OK", (dialog, which) -> {
+                    String description = input.getText().toString();
+                    if (!description.isEmpty()) {
+                        handleEmergencySelection("Other: " + description);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void handleEmergencySelection(String emergencyType) {
+        Toast.makeText(this, "Emergency Reported: " + emergencyType, Toast.LENGTH_SHORT).show();
+        // TODO: Implement actual call or report logic here
     }
 
     private void searchLocation(String locationName, boolean showAddToFavorites) {
