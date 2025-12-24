@@ -16,6 +16,7 @@ import org.osmdroid.util.GeoPoint;
 public class fragment_map extends Fragment {
 
     private MapView mapView;
+    private IMapController controller;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -30,11 +31,19 @@ public class fragment_map extends Fragment {
         mapView = view.findViewById(R.id.mapView);
         mapView.setMultiTouchControls(true);
 
-        IMapController controller = mapView.getController();
+        controller = mapView.getController();
         controller.setZoom(15.0);
         controller.setCenter(new GeoPoint(3.1207, 101.6544)); // Universiti Malaya
 
         return view;
+    }
+
+    public void updateMapLocation(double latitude, double longitude) {
+        if (mapView != null && controller != null) {
+            GeoPoint point = new GeoPoint(latitude, longitude);
+            controller.setCenter(point);
+            controller.setZoom(18.0); // 搜索到位置后稍微放大一点
+        }
     }
 
     @Override
