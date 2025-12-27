@@ -10,32 +10,25 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 public class Register extends AppCompatActivity {
 
     TextInputEditText editTextEmail, editTextPassword;
     Button buttonReg;
-    FirebaseAuth mAuth;
     ProgressBar progressBar;
     TextView textView;
 
     @Override
     public void onStart() {
         super.onStart();
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser != null) {
+        // Check if user is signed in (non-null) and update UI accordingly.
+        if (SupabaseAuthManager.INSTANCE.isLoggedIn()) {
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             startActivity(intent);
             finish();
@@ -52,7 +45,7 @@ public class Register extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        mAuth = FirebaseAuth.getInstance();
+
         editTextEmail = findViewById(R.id.email);
         editTextPassword = findViewById(R.id.password);
         buttonReg = findViewById(R.id.btn_register);
@@ -77,31 +70,33 @@ public class Register extends AppCompatActivity {
 
                 if (TextUtils.isEmpty(email)) {
                     Toast.makeText(Register.this, "Enter email", Toast.LENGTH_SHORT).show();
+                    progressBar.setVisibility(View.GONE);
                     return;
                 }
                 if (TextUtils.isEmpty(password)) {
                     Toast.makeText(Register.this, "Enter password", Toast.LENGTH_SHORT).show();
+                    progressBar.setVisibility(View.GONE);
                     return;
                 }
 
-                mAuth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                            @Override
-                            public void onComplete(@NonNull Task<AuthResult> task) {
-                                if (task.isSuccessful()) {
-                                    progressBar.setVisibility(View.GONE);
-                                    Toast.makeText(Register.this, "Account created.",
-                                            Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(getApplicationContext(), Login.class);
-                                    startActivity(intent);
-                                    finish();
-                                } else {
-                                    // If sign in fails, display a message to the user.
-                                    Toast.makeText(Register.this, "Authentication failed.",
-                                            Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                        });
+                SupabaseAuthManager.INSTANCE.signUp(email, password, new SupabaseAuthManager.AuthCallback() {
+                    @Override
+                    public void onComplete(boolean success, String message) {
+                        progressBar.setVisibility(View.GONE);
+                        if (success) {
+                            Toast.makeText(Register.this, "Account created.",
+                                    Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(getApplicationContext(), Login.class);
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            String msg = message != null ? message : "Authentication failed.";
+                            Toast.makeText(Register.this, msg,
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
             }
         });
     }
