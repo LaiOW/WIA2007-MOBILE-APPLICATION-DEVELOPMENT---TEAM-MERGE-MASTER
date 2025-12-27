@@ -4,21 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main1"
     android:layout_width="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:gravity="center">
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_layout"
         android:layout_width="match_parent"
-    <TextView
-        android:id="@+id/user_details"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:tabMode="fixed"
         app:tabGravity="fill" />
-        android:text="H" />
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/view_pager"
@@ -26,11 +21,16 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-</LinearLayout>
+    <TextView
+        android:id="@+id/user_details"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="User Details" />
+
     <Button
-        android:text="@string/logout"
         android:id="@+id/logout"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="Logout" />
 
 </LinearLayout>

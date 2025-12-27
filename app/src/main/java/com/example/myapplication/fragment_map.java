@@ -34,31 +34,57 @@ public class fragment_map extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_map, container, false);
 
-        // 🔹 必须先设置 user agent
+        // Configuration
         Configuration.getInstance().setUserAgentValue(requireContext().getPackageName());
 
         mapView = view.findViewById(R.id.mapView);
+        mapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         mapView.setMultiTouchControls(true);
+        
+        // Smart Touch Handling: Allow navigation from edges, pan map in center
+        mapView.setOnTouchListener((v, event) -> {
+            int action = event.getAction();
+            switch (action) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                case android.view.MotionEvent.ACTION_MOVE:
+                    // Define an edge zone (20% of the screen width)
+                    int edgeZone = v.getWidth() / 5;
+                    float x = event.getX();
+
+                    // If touch is near the left or right edge, allow the ViewPager to intercept (Swipe Page)
+                    if (x < edgeZone || x > v.getWidth() - edgeZone) {
+                        v.getParent().requestDisallowInterceptTouchEvent(false);
+                    } else {
+                        // If touch is in the center, Lock the ViewPager (Pan Map)
+                        v.getParent().requestDisallowInterceptTouchEvent(true);
+                    }
+                    break;
+                    
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    // Reset on release
+                    v.getParent().requestDisallowInterceptTouchEvent(false);
+                    break;
+            }
+            return false; // Return false to let the MapView process the touch as well
+        });
 
         controller = mapView.getController();
         controller.setZoom(15.0);
-        
-        // 🔹 添加用户当前位置覆盖层
+
+        // Location Overlay
         GpsMyLocationProvider provider = new GpsMyLocationProvider(requireContext());
-        
+
         myLocationOverlay = new MyLocationNewOverlay(provider, mapView);
-        myLocationOverlay.enableMyLocation(); 
-        myLocationOverlay.enableFollowLocation(); 
+        myLocationOverlay.enableMyLocation();
+        myLocationOverlay.enableFollowLocation();
         myLocationOverlay.setDrawAccuracyEnabled(true);
-        
-        // 自定义 "You are here" 标记（带有箭头的图标）
+
+        // Custom Icon
         Bitmap personIcon = createPersonIconWithArrow();
         myLocationOverlay.setPersonIcon(personIcon);
-        
-        // 指向图标（如罗盘）也使用相同图标
-        myLocationOverlay.setDirectionIcon(personIcon); 
-        
-        // 只有当第一次定位成功时，才将地图中心移动到用户位置
+        myLocationOverlay.setDirectionIcon(personIcon);
+
         myLocationOverlay.runOnFirstFix(() -> {
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
@@ -69,13 +95,12 @@ public class fragment_map extends Fragment {
         });
 
         mapView.getOverlays().add(myLocationOverlay);
-        
-        controller.setCenter(new GeoPoint(3.1207, 101.6544)); 
+
+        controller.setCenter(new GeoPoint(3.1207, 101.6544));
 
         return view;
     }
 
-    // 绘制一个带有箭头和 "U R Here" 文本的图标
     private Bitmap createPersonIconWithArrow() {
         int width = 150;
         int height = 150;
@@ -84,27 +109,26 @@ public class fragment_map extends Fragment {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
-        // 绘制箭头（红色三角形）
+        // Arrow
         Path arrowPath = new Path();
-        arrowPath.moveTo(width / 2f, height / 2f); // 底部中心
-        arrowPath.lineTo(width / 2f - 20, height / 2f + 40); // 左下
-        arrowPath.lineTo(width / 2f, height / 2f - 40); // 顶部尖端
-        arrowPath.lineTo(width / 2f + 20, height / 2f + 40); // 右下
+        arrowPath.moveTo(width / 2f, height / 2f);
+        arrowPath.lineTo(width / 2f - 20, height / 2f + 40);
+        arrowPath.lineTo(width / 2f, height / 2f - 40);
+        arrowPath.lineTo(width / 2f + 20, height / 2f + 40);
         arrowPath.close();
 
-        paint.setColor(Color.BLUE); // 箭头颜色
+        paint.setColor(Color.BLUE);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawPath(arrowPath, paint);
 
-        // 绘制圆形标记
+        // Circle
         paint.setColor(Color.BLUE);
         canvas.drawCircle(width / 2f, height / 2f, 15, paint);
-        
-        // 绘制文本 "U R Here"
+
+        // Text
         paint.setColor(Color.BLACK);
         paint.setTextSize(30);
         paint.setTextAlign(Paint.Align.CENTER);
-        // 在图标上方绘制文字
         canvas.drawText("You are here", width / 2f, height / 2f - 50, paint);
 
         return bitmap;
@@ -113,11 +137,11 @@ public class fragment_map extends Fragment {
     public void updateMapLocation(double latitude, double longitude) {
         if (mapView != null && controller != null) {
             GeoPoint point = new GeoPoint(latitude, longitude);
-            
+
             if (myLocationOverlay != null && myLocationOverlay.isFollowLocationEnabled()) {
                 myLocationOverlay.disableFollowLocation();
             }
-            
+
             controller.setCenter(point);
             controller.setZoom(18.0);
         }

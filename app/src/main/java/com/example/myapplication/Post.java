@@ -5,6 +5,13 @@ public class Post {
     private String title;
     private String content;
     private String category;
+    private String imageUri; // Null if no image
+    private int likeCount = 0;
+    private boolean isLiked = false;
+
+    public Post() {
+        // Default constructor required for calls to DataSnapshot.getValue(Post.class)
+    }
 
     public Post(String userName, String content, String category) {
         this.userName = userName;
@@ -34,4 +41,17 @@ public class Post {
     public String getCategory() {
         return category;
     }
+
+    public String getImageUri() {
+        return imageUri;
+    }
+
+    public void setImageUri(String imageUri) {
+        this.imageUri = imageUri;
+    }
+
+    public int getLikeCount() { return likeCount; }
+    public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
+    public boolean isLiked() { return isLiked; }
+    public void setLiked(boolean liked) { isLiked = liked; }
 }

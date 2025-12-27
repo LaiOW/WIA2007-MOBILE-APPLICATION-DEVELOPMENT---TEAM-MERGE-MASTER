@@ -14,8 +14,8 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
     @NonNull
     @Override
     public Fragment createFragment(int position) {
-        if (position == 1) {
-            return new TrendingFragment();
+        if (position == 0) {
+            return new MapScreenFragment();
         }
         return new HomeFragment();
     }
