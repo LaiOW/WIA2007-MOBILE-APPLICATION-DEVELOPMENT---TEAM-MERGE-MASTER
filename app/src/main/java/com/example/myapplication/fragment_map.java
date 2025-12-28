@@ -1,15 +1,18 @@
 package com.example.myapplication;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -26,6 +29,7 @@ public class fragment_map extends Fragment {
     private MapView mapView;
     private IMapController controller;
     private MyLocationNewOverlay myLocationOverlay;
+    private TextView tvUserName;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -40,47 +44,49 @@ public class fragment_map extends Fragment {
         mapView = view.findViewById(R.id.mapView);
         mapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         mapView.setMultiTouchControls(true);
+
+        // UI Overlay Elements
+        tvUserName = view.findViewById(R.id.tvUserName);
+        View cardProfile = view.findViewById(R.id.cardProfile);
         
-        // Smart Touch Handling: Allow navigation from edges, pan map in center
+        updateUsernameDisplay();
+
+        cardProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), ProfileActivity.class);
+            startActivity(intent);
+        });
+
+        // Smart Touch Handling
         mapView.setOnTouchListener((v, event) -> {
             int action = event.getAction();
             switch (action) {
                 case android.view.MotionEvent.ACTION_DOWN:
                 case android.view.MotionEvent.ACTION_MOVE:
-                    // Define an edge zone (20% of the screen width)
                     int edgeZone = v.getWidth() / 5;
                     float x = event.getX();
-
-                    // If touch is near the left or right edge, allow the ViewPager to intercept (Swipe Page)
                     if (x < edgeZone || x > v.getWidth() - edgeZone) {
                         v.getParent().requestDisallowInterceptTouchEvent(false);
                     } else {
-                        // If touch is in the center, Lock the ViewPager (Pan Map)
                         v.getParent().requestDisallowInterceptTouchEvent(true);
                     }
                     break;
-                    
                 case android.view.MotionEvent.ACTION_UP:
                 case android.view.MotionEvent.ACTION_CANCEL:
-                    // Reset on release
                     v.getParent().requestDisallowInterceptTouchEvent(false);
                     break;
             }
-            return false; // Return false to let the MapView process the touch as well
+            return false;
         });
 
         controller = mapView.getController();
         controller.setZoom(15.0);
 
-        // Location Overlay
         GpsMyLocationProvider provider = new GpsMyLocationProvider(requireContext());
-
         myLocationOverlay = new MyLocationNewOverlay(provider, mapView);
         myLocationOverlay.enableMyLocation();
         myLocationOverlay.enableFollowLocation();
         myLocationOverlay.setDrawAccuracyEnabled(true);
 
-        // Custom Icon
         Bitmap personIcon = createPersonIconWithArrow();
         myLocationOverlay.setPersonIcon(personIcon);
         myLocationOverlay.setDirectionIcon(personIcon);
@@ -95,55 +101,22 @@ public class fragment_map extends Fragment {
         });
 
         mapView.getOverlays().add(myLocationOverlay);
-
         controller.setCenter(new GeoPoint(3.1207, 101.6544));
 
         return view;
     }
 
-    private Bitmap createPersonIconWithArrow() {
-        int width = 150;
-        int height = 150;
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-
-        // Arrow
-        Path arrowPath = new Path();
-        arrowPath.moveTo(width / 2f, height / 2f);
-        arrowPath.lineTo(width / 2f - 20, height / 2f + 40);
-        arrowPath.lineTo(width / 2f, height / 2f - 40);
-        arrowPath.lineTo(width / 2f + 20, height / 2f + 40);
-        arrowPath.close();
-
-        paint.setColor(Color.BLUE);
-        paint.setStyle(Paint.Style.FILL);
-        canvas.drawPath(arrowPath, paint);
-
-        // Circle
-        paint.setColor(Color.BLUE);
-        canvas.drawCircle(width / 2f, height / 2f, 15, paint);
-
-        // Text
-        paint.setColor(Color.BLACK);
-        paint.setTextSize(30);
-        paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("You are here", width / 2f, height / 2f - 50, paint);
-
-        return bitmap;
-    }
-
-    public void updateMapLocation(double latitude, double longitude) {
-        if (mapView != null && controller != null) {
-            GeoPoint point = new GeoPoint(latitude, longitude);
-
-            if (myLocationOverlay != null && myLocationOverlay.isFollowLocationEnabled()) {
-                myLocationOverlay.disableFollowLocation();
+    private void updateUsernameDisplay() {
+        if (getContext() == null) return;
+        String currentUserEmail = SupabaseManager.INSTANCE.getCurrentUserEmail();
+        if (currentUserEmail != null) {
+            SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+            String savedName = sharedPreferences.getString("display_name", null);
+            if (savedName != null) {
+                tvUserName.setText(savedName);
+            } else {
+                tvUserName.setText(currentUserEmail.split("@")[0]);
             }
-
-            controller.setCenter(point);
-            controller.setZoom(18.0);
         }
     }
 
@@ -151,17 +124,38 @@ public class fragment_map extends Fragment {
     public void onResume() {
         super.onResume();
         if (mapView != null) mapView.onResume();
-        if (myLocationOverlay != null) {
-            myLocationOverlay.enableMyLocation();
-        }
+        if (myLocationOverlay != null) myLocationOverlay.enableMyLocation();
+        updateUsernameDisplay();
     }
 
     @Override
     public void onPause() {
         super.onPause();
         if (mapView != null) mapView.onPause();
-        if (myLocationOverlay != null) {
-            myLocationOverlay.disableMyLocation();
-        }
+        if (myLocationOverlay != null) myLocationOverlay.disableMyLocation();
+    }
+
+    private Bitmap createPersonIconWithArrow() {
+        int width = 150; int height = 150;
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        Path arrowPath = new Path();
+        arrowPath.moveTo(width / 2f, height / 2f);
+        arrowPath.lineTo(width / 2f - 20, height / 2f + 40);
+        arrowPath.lineTo(width / 2f, height / 2f - 40);
+        arrowPath.lineTo(width / 2f + 20, height / 2f + 40);
+        arrowPath.close();
+        paint.setColor(Color.BLUE);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawPath(arrowPath, paint);
+        paint.setColor(Color.BLUE);
+        canvas.drawCircle(width / 2f, height / 2f, 15, paint);
+        paint.setColor(Color.BLACK);
+        paint.setTextSize(30);
+        paint.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("You are here", width / 2f, height / 2f - 50, paint);
+        return bitmap;
     }
 }

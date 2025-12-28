@@ -28,8 +28,6 @@ public class home_page extends AppCompatActivity {
         
         // Keep 1 page alive on either side (prevents Map fragment from being destroyed)
         viewPager.setOffscreenPageLimit(1);
-        
-        // Disable swipe if needed, but user asked for swipe
         viewPager.setUserInputEnabled(true);
     }
 }
