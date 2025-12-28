@@ -1,7 +1,9 @@
 package com.example.myapplication;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,13 +18,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,13 +26,17 @@ public class HomeFragment extends Fragment {
     private FeedAdapter adapter;
     private List<Post> postList;
     private ActivityResultLauncher<Intent> createPostLauncher;
+    private TextView tvUsernameTop;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         createPostLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            result -> { });
+            result -> { 
+                // Refresh posts when returning from creating a post
+                fetchPosts();
+            });
     }
 
     @Nullable
@@ -46,14 +45,10 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         try {
-            TextView tvUsernameTop = view.findViewById(R.id.tvUsernameTop);
-            
+            tvUsernameTop = view.findViewById(R.id.tvUsernameTop);
+
             if (tvUsernameTop != null) {
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                if (user != null && user.getEmail() != null) {
-                    String name = user.getEmail().split("@")[0];
-                    tvUsernameTop.setText(name);
-                }
+                updateUsernameDisplay();
 
                 tvUsernameTop.setOnClickListener(v -> {
                     Intent intent = new Intent(getActivity(), ProfileActivity.class);
@@ -68,35 +63,65 @@ public class HomeFragment extends Fragment {
             adapter = new FeedAdapter(postList);
             recyclerFeed.setAdapter(adapter);
 
-            DatabaseReference postsRef = FirebaseDatabase.getInstance().getReference("Posts");
-            postsRef.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    postList.clear();
-                    for (DataSnapshot postSnapshot : snapshot.getChildren()) {
-                        Post post = postSnapshot.getValue(Post.class);
-                        if (post != null) {
-                            postList.add(0, post); 
-                        }
-                    }
-                    adapter.notifyDataSetChanged();
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) { }
-            });
+            fetchPosts();
 
             FloatingActionButton fabNewPost = view.findViewById(R.id.fab_new_post);
             fabNewPost.setOnClickListener(v -> {
                 Intent intent = new Intent(getActivity(), CreatePostActivity.class);
                 createPostLauncher.launch(intent);
             });
-        
+
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(getContext(), "HomeFragment Crash: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh username when returning from ProfileActivity
+        if (tvUsernameTop != null) {
+            updateUsernameDisplay();
+        }
+    }
+
+    private void updateUsernameDisplay() {
+        if (getContext() == null) return;
+        
+        String currentUserEmail = SupabaseManager.INSTANCE.getCurrentUserEmail();
+        if (currentUserEmail != null) {
+            SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+            String savedName = sharedPreferences.getString("display_name", null);
+            
+            if (savedName != null) {
+                tvUsernameTop.setText(savedName);
+            } else {
+                String name = currentUserEmail.split("@")[0];
+                tvUsernameTop.setText(name);
+            }
+        }
+    }
+
+    private void fetchPosts() {
+        SupabaseManager.INSTANCE.getPosts(new SupabaseManager.DatabaseCallback<Post>() {
+            @Override
+            public void onSuccess(List<Post> data) {
+                postList.clear();
+                if (data != null) {
+                    postList.addAll(data);
+                }
+                adapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onError(String message) {
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), "Error fetching posts: " + message, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 }

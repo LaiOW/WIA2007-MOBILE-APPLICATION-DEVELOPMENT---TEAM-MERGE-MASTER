@@ -11,12 +11,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.List;
 
 public class CreatePostActivity extends AppCompatActivity {
 
@@ -59,14 +56,21 @@ public class CreatePostActivity extends AppCompatActivity {
                 buttonSubmitPost.setText("Posting...");
 
                 // Get Current User
-                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                String userName = (currentUser != null && currentUser.getEmail() != null) ? currentUser.getEmail() : "Anonymous";
+                String currentUserEmail = SupabaseManager.INSTANCE.getCurrentUserEmail();
+                String userName = (currentUserEmail != null) ? currentUserEmail : "Anonymous";
                 if (userName.contains("@")) {
                     userName = userName.split("@")[0];
                 }
 
                 if (selectedImageUri != null) {
-                    uploadImageAndSavePost(userName, postTitle, postContent, selectedImageUri);
+                    try {
+                        InputStream inputStream = getContentResolver().openInputStream(selectedImageUri);
+                        uploadImageAndSavePost(userName, postTitle, postContent, inputStream);
+                    } catch (FileNotFoundException e) {
+                        Toast.makeText(this, "Image not found", Toast.LENGTH_SHORT).show();
+                        buttonSubmitPost.setEnabled(true);
+                        buttonSubmitPost.setText("Post");
+                    }
                 } else {
                     savePostToDatabase(userName, postTitle, postContent, null);
                 }
@@ -77,21 +81,21 @@ public class CreatePostActivity extends AppCompatActivity {
         });
     }
 
-    private void uploadImageAndSavePost(String userName, String title, String content, Uri imageUri) {
-        StorageReference storageRef = FirebaseStorage.getInstance().getReference("post_images");
-        StorageReference imageRef = storageRef.child(System.currentTimeMillis() + ".jpg");
+    private void uploadImageAndSavePost(String userName, String title, String content, InputStream inputStream) {
+        String fileName = System.currentTimeMillis() + ".jpg";
+        SupabaseManager.INSTANCE.uploadImage(inputStream, fileName, new SupabaseManager.StorageCallback() {
+            @Override
+            public void onSuccess(String imageUrl) {
+                savePostToDatabase(userName, title, content, imageUrl);
+            }
 
-        imageRef.putFile(imageUri)
-            .addOnSuccessListener(taskSnapshot -> {
-                imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                    savePostToDatabase(userName, title, content, uri.toString());
-                });
-            })
-            .addOnFailureListener(e -> {
+            @Override
+            public void onError(String message) {
                 buttonSubmitPost.setEnabled(true);
                 buttonSubmitPost.setText("Post");
-                Toast.makeText(this, "Image Upload Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            });
+                Toast.makeText(CreatePostActivity.this, "Image Upload Failed: " + message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void savePostToDatabase(String userName, String title, String content, String imageUrl) {
@@ -100,21 +104,20 @@ public class CreatePostActivity extends AppCompatActivity {
             post.setImageUri(imageUrl);
         }
 
-        DatabaseReference postsRef = FirebaseDatabase.getInstance().getReference("Posts");
-        String postId = postsRef.push().getKey();
-        
-        if (postId != null) {
-            postsRef.child(postId).setValue(post)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Post Published!", Toast.LENGTH_SHORT).show();
-                    setResult(RESULT_OK);
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    buttonSubmitPost.setEnabled(true);
-                    buttonSubmitPost.setText("Post");
-                    Toast.makeText(this, "Database Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
-        }
+        SupabaseManager.INSTANCE.savePost(post, new SupabaseManager.DatabaseCallback<Post>() {
+            @Override
+            public void onSuccess(List<Post> data) {
+                Toast.makeText(CreatePostActivity.this, "Post Published!", Toast.LENGTH_SHORT).show();
+                setResult(RESULT_OK);
+                finish();
+            }
+
+            @Override
+            public void onError(String message) {
+                buttonSubmitPost.setEnabled(true);
+                buttonSubmitPost.setText("Post");
+                Toast.makeText(CreatePostActivity.this, "Database Error: " + message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
