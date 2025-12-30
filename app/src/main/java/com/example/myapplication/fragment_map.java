@@ -22,6 +22,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -137,6 +138,28 @@ public class fragment_map extends Fragment {
         mapView.getOverlays().add(myLocationOverlay);
         controller.setCenter(new GeoPoint(3.1207, 101.6544));
 
+        ImageView searchbutton = view.findViewById(R.id.searchIcon);
+        searchbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // If suggestions are visible, navigate to first result
+                if (suggestionsList.getVisibility() == View.VISIBLE && !searchResults.isEmpty()) {
+                    searchHandler.removeCallbacksAndMessages(null);
+                    suggestionsList.setVisibility(View.GONE);
+                    searchEditText.clearFocus();
+                    hideKeyboard();
+                    SearchResult result = searchResults.get(0);
+                    moveToLocation(result.lat, result.lon, result.displayName);
+                } else {
+                    // Focus and select search bar text for new search
+                    searchEditText.requestFocus();
+                    searchEditText.selectAll();
+                    InputMethodManager imm = (InputMethodManager) 
+                        getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT);
+                }
+            }
+        });
         return view;
     }
 

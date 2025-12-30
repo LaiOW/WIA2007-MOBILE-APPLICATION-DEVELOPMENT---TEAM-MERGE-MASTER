@@ -9,7 +9,10 @@
     <org.osmdroid.views.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="-16dp">
+    </org.osmdroid.views.MapView>
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardSearch"
@@ -35,11 +38,10 @@
                 android:padding="12dp">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_search"
-                    android:contentDescription="@string/search_icon_desc"
-                    android:scaleType="fitCenter" />
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:contentDescription="@string/location_icon_desc"
+                    android:src="@drawable/ic_location_red" />
 
                 <EditText
                     android:id="@+id/ETsearch"
@@ -56,10 +58,15 @@
                     android:importantForAutofill="no" />
 
                 <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:contentDescription="@string/location_icon_desc"
-                    android:src="@drawable/ic_location_red" />
+                    android:id="@+id/searchIcon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="@string/search_icon_desc"
+                    android:scaleType="fitCenter"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:src="@drawable/ic_search" />
+
             </LinearLayout>
 
             <ListView
