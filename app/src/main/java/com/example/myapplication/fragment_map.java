@@ -1,13 +1,17 @@
 package com.example.myapplication;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -28,6 +32,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import org.osmdroid.config.Configuration;
@@ -53,6 +59,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class fragment_map extends Fragment {
+
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
 
     private MapView mapView;
     private IMapController controller;
@@ -98,6 +106,23 @@ public class fragment_map extends Fragment {
         cardProfile.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), ProfileActivity.class);
             startActivity(intent);
+        });
+
+        // SOS Button Listener
+        view.findViewById(R.id.BTSOScall).setOnClickListener(v -> {
+            // Check for location permissions first
+            if (getContext() != null && 
+                (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                 ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+                // Request permissions
+                requestPermissions(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                }, LOCATION_PERMISSION_REQUEST_CODE);
+                return;
+            }
+            
+            recordSOSLocation();
         });
 
         // Close suggestions when touching map
@@ -196,6 +221,68 @@ public class fragment_map extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         if (executor != null) executor.shutdown();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, try SOS call again
+                recordSOSLocation();
+            } else {
+                Toast.makeText(getContext(), "Location permission is required for SOS functionality", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void recordSOSLocation() {
+        double latitude = 0;
+        double longitude = 0;
+        boolean locationFound = false;
+        
+        // Try 1: Get from myLocationOverlay
+        if (myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
+            latitude = myLocationOverlay.getMyLocation().getLatitude();
+            longitude = myLocationOverlay.getMyLocation().getLongitude();
+            locationFound = true;
+        } 
+        // Try 2: Get last known location from LocationManager
+        else if (getContext() != null) {
+            LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+            if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (lastLocation == null) {
+                    lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
+                if (lastLocation != null) {
+                    latitude = lastLocation.getLatitude();
+                    longitude = lastLocation.getLongitude();
+                    locationFound = true;
+                }
+            }
+        }
+        
+        if (!locationFound) {
+            Toast.makeText(getContext(), "Unable to get current location. Please wait for GPS to acquire signal.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        
+        // Record SOS call to Supabase
+        final double finalLat = latitude;
+        final double finalLon = longitude;
+        SupabaseManager.INSTANCE.recordSOSCall(latitude, longitude, new SupabaseManager.AuthCallback() {
+            @Override
+            public void onComplete(boolean success, String message) {
+                if (success) {
+                    Toast.makeText(getContext(), "SOS Emergency Call Initiated!\nLocation: " + 
+                        String.format("%.6f, %.6f", finalLat, finalLon), Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(getContext(), "SOS call failed: " + message, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     private void setupSearchAutocomplete() {

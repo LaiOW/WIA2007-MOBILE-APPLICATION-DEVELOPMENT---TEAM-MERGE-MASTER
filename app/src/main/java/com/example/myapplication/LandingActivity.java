@@ -1,9 +1,13 @@
 package com.example.myapplication;
 
 import android.content.Intent;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
+import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class LandingActivity extends AppCompatActivity {
@@ -11,6 +15,9 @@ public class LandingActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check GPS status
+        checkGPSEnabled();
         
         // Immediate check
         if (checkLogin()) return;
@@ -24,6 +31,28 @@ public class LandingActivity extends AppCompatActivity {
                 setContentView(R.layout.activity_landing);
             }
         }, 500);
+    }
+
+    private void checkGPSEnabled() {
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean isGPSEnabled = locationManager != null && 
+            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        
+        if (!isGPSEnabled) {
+            new AlertDialog.Builder(this)
+                .setTitle("GPS Disabled")
+                .setMessage("GPS is currently disabled. Please enable location services for better app experience.")
+                .setPositiveButton("Enable GPS", (dialog, which) -> {
+                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    startActivity(intent);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    Toast.makeText(this, "Some features may not work without GPS", Toast.LENGTH_LONG).show();
+                    dialog.dismiss();
+                })
+                .setCancelable(false)
+                .show();
+        }
     }
 
     private boolean checkLogin() {

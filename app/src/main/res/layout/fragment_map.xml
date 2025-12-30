@@ -217,7 +217,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"/>
             <Button
-                android:id="@+id/BTcall"
+                android:id="@+id/BTSOScall"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="16dp"

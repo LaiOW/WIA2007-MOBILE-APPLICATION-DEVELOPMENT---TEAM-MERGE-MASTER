@@ -23,7 +23,11 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 import java.util.function.Function
 import io.github.jan.supabase.serializer.KotlinXSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 object SupabaseManager {
     private const val SUPABASE_URL = "https://syuyeszaltkqewyeqwho.supabase.co"
@@ -180,6 +184,40 @@ object SupabaseManager {
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     callback.onError(e.message)
+                }
+            }
+        }
+    }
+
+    
+    // SOS Operations
+    private fun getUsername(): String {
+        return getCurrentUserEmail()?.split("@")?.firstOrNull() ?: "anonymous"
+    }
+
+    private fun getTime(): String {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        return dateFormat.format(Date())
+    }
+
+    fun recordSOSCall(xCoordinate: Double, yCoordinate: Double, callback: AuthCallback) {
+        runOnIo {
+            try {
+                val username = getUsername()
+                val time = getTime()
+                val sosCall = SOSCall(
+                    time = time,
+                    username = username,
+                    x_coordinate = xCoordinate,
+                    y_coordinate = yCoordinate
+                )
+                client.postgrest["SOS calls"].insert(sosCall)
+                withContext(Dispatchers.Main) {
+                    callback.onComplete(true, "SOS call recorded successfully")
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    callback.onComplete(false, "Failed to record SOS: ${e.message}")
                 }
             }
         }
