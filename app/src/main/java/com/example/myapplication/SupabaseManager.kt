@@ -222,4 +222,32 @@ object SupabaseManager {
             }
         }
     }
+
+    // Statistics Operations
+    interface StatsCallback {
+        fun onSuccess(casesCount: Int, userCount: Int)
+        fun onError(message: String?)
+    }
+
+    fun getStatistics(callback: StatsCallback) {
+        runOnIo {
+            try {
+                // Get total SOS cases count
+                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()
+                val casesCount = sosCallsResponse.size
+
+                // Get unique user count from SOS calls
+                val uniqueUsers = sosCallsResponse.map { it.username }.toSet()
+                val userCount = uniqueUsers.size
+
+                withContext(Dispatchers.Main) {
+                    callback.onSuccess(casesCount, userCount)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    callback.onError(e.message)
+                }
+            }
+        }
+    }
 }

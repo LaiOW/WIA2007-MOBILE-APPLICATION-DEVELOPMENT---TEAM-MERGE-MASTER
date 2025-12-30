@@ -53,8 +53,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -66,6 +69,10 @@ public class fragment_map extends Fragment {
     private IMapController controller;
     private MyLocationNewOverlay myLocationOverlay;
     private TextView tvUserName;
+    private TextView tvCasesCount;
+    private TextView tvDateDay;
+    private TextView tvUserCount;
+    private TextView tvDateMonthYear;
     private EditText searchEditText;
     private ListView suggestionsList;
     private ArrayAdapter<String> suggestionsAdapter;
@@ -93,6 +100,10 @@ public class fragment_map extends Fragment {
 
         // UI Overlay Elements
         tvUserName = view.findViewById(R.id.tvUserName);
+        tvCasesCount = view.findViewById(R.id.tvCasesCount);
+        tvDateDay = view.findViewById(R.id.tvDateDay);
+        tvUserCount = view.findViewById(R.id.tvUserCount);
+        tvDateMonthYear = view.findViewById(R.id.tvDateMonthYear);
         View cardProfile = view.findViewById(R.id.cardProfile);
         searchEditText = view.findViewById(R.id.ETsearch);
         suggestionsList = view.findViewById(R.id.suggestionsList);
@@ -101,6 +112,8 @@ public class fragment_map extends Fragment {
         searchEditText.setSelectAllOnFocus(true);
         
         updateUsernameDisplay();
+        updateDateDisplay();
+        loadStatistics();
         setupSearchAutocomplete();
 
         cardProfile.setOnClickListener(v -> {
@@ -202,12 +215,52 @@ public class fragment_map extends Fragment {
         }
     }
 
+    private void updateDateDisplay() {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat dayFormat = new SimpleDateFormat("dd", Locale.getDefault());
+        SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMM\nyyyy", Locale.getDefault());
+        
+        String day = dayFormat.format(calendar.getTime());
+        String monthYear = monthYearFormat.format(calendar.getTime());
+        
+        tvDateDay.setText(day);
+        tvDateMonthYear.setText(monthYear);
+    }
+
+    private void loadStatistics() {
+        SupabaseManager.INSTANCE.getStatistics(new SupabaseManager.StatsCallback() {
+            @Override
+            public void onSuccess(int casesCount, int userCount) {
+                if (getActivity() != null && isAdded()) {
+                    getActivity().runOnUiThread(() -> {
+                        tvCasesCount.setText(String.valueOf(casesCount));
+                        tvUserCount.setText(String.valueOf(userCount));
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                if (getActivity() != null && isAdded()) {
+                    getActivity().runOnUiThread(() -> {
+                        tvCasesCount.setText("--");
+                        tvUserCount.setText("--");
+                        Toast.makeText(getContext(), "Failed to load statistics: " + message, 
+                            Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        });
+    }
+
     @Override
     public void onResume() {
         super.onResume();
         if (mapView != null) mapView.onResume();
         if (myLocationOverlay != null) myLocationOverlay.enableMyLocation();
         updateUsernameDisplay();
+        updateDateDisplay();
+        loadStatistics();
     }
 
     @Override
