@@ -6,10 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Path;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -77,6 +73,8 @@ public class fragment_map extends Fragment {
     private EditText searchEditText;
     private ListView suggestionsList;
     private com.google.android.material.floatingactionbutton.FloatingActionButton fabReturnToLocation;
+    private RouteManager routeManager;
+    private IconManager iconManager;
     private ArrayAdapter<String> suggestionsAdapter;
     private List<SearchResult> searchResults;
     private Handler searchHandler;
@@ -165,14 +163,17 @@ public class fragment_map extends Fragment {
         controller = mapView.getController();
         // Don't set default zoom - let it zoom to user location automatically
 
+        // Initialize IconManager
+        iconManager = new IconManager(requireContext());
+
         GpsMyLocationProvider provider = new GpsMyLocationProvider(requireContext());
         myLocationOverlay = new MyLocationNewOverlay(provider, mapView);
         myLocationOverlay.enableMyLocation();
         myLocationOverlay.enableFollowLocation();
         myLocationOverlay.setDrawAccuracyEnabled(true);
 
-
-        Bitmap personIcon = createPersonIconWithArrow();
+        // Use IconManager to create person icon
+        Bitmap personIcon = iconManager.createPersonIconWithArrow();
         myLocationOverlay.setPersonIcon(personIcon);
         myLocationOverlay.setDirectionIcon(personIcon);
 
@@ -187,6 +188,9 @@ public class fragment_map extends Fragment {
 
         mapView.getOverlays().add(myLocationOverlay);
         // Don't set a default center - let it use user's actual location
+
+        // Initialize RouteManager
+        routeManager = new RouteManager(requireContext(), mapView);
 
         // Add scroll listener to update coordinates display
         mapView.addMapListener(new org.osmdroid.events.MapListener() {
@@ -322,7 +326,8 @@ public class fragment_map extends Fragment {
                             marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
                             marker.setTitle("SOS Call");
                             marker.setSnippet("User: " + sosCall.getUsername() + "\nTime: " + sosCall.getTime());
-                            marker.setIcon(getResources().getDrawable(android.R.drawable.ic_dialog_alert, null));
+                            // Use IconManager to set alert icon
+                            iconManager.setAlertIcon(marker);
                             mapView.getOverlays().add(marker);
                             sosMarkers.add(marker);
                         }
@@ -461,9 +466,34 @@ public class fragment_map extends Fragment {
                 myLocationOverlay.disableFollowLocation();
             }
 
-            // Use animateTo for smooth navigation
+            // Calculate and draw route
+            if (routeManager != null && myLocationOverlay.getMyLocation() != null) {
+                GeoPoint currentLocation = myLocationOverlay.getMyLocation();
+
+                Toast.makeText(getContext(), "Calculating route...", Toast.LENGTH_SHORT).show();
+
+                routeManager.drawRoute(currentLocation, sosPoint, new RouteManager.RouteCallback() {
+                    @Override
+                    public void onRouteCalculated(double distanceKm, double durationMinutes) {
+                        Toast.makeText(getContext(),
+                                String.format(java.util.Locale.getDefault(),
+                                        "Route: %.1f km, ~%.0f min",
+                                        distanceKm, durationMinutes),
+                                Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onRouteError(String error) {
+                        Toast.makeText(getContext(),
+                                "Route calculation failed: " + error,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            // Navigate to the location
             controller.animateTo(sosPoint);
-            controller.setZoom(17.0);
+            controller.setZoom(15.0);
 
             // Force map refresh
             mapView.invalidate();
@@ -487,26 +517,77 @@ public class fragment_map extends Fragment {
     }
 
     private void highlightNearestSOSCalls(List<NearestSOSDialog.SOSCallWithDistance> nearest5, GeoPoint userLocation) {
-        // Reset all SOS markers to default red alert icon
+        // Reset all SOS markers to default red alert icon with transparency
         for (Marker marker : sosMarkers) {
-            marker.setIcon(getResources().getDrawable(android.R.drawable.ic_dialog_alert, null));
-            marker.setAlpha(0.5f); // Make non-nearest markers semi-transparent
+            iconManager.resetToDefaultIcon(marker);
+            // Remove any existing click listener
+            marker.setOnMarkerClickListener(null);
         }
 
-        // Highlight the nearest 5 SOS calls with a different color and full opacity
+        // Highlight the nearest 5 SOS calls with star icon and full opacity
         for (NearestSOSDialog.SOSCallWithDistance item : nearest5) {
             for (Marker marker : sosMarkers) {
                 GeoPoint markerPos = marker.getPosition();
                 // Check if this marker matches the nearest SOS call (comparing with x=lat, y=lon)
                 if (Math.abs(markerPos.getLatitude() - item.sosCall.getX_coordinate()) < 0.0001 &&
                     Math.abs(markerPos.getLongitude() - item.sosCall.getY_coordinate()) < 0.0001) {
-                    // Highlight this marker with green icon and full opacity
-                    marker.setIcon(getResources().getDrawable(android.R.drawable.star_big_on, null));
-                    marker.setAlpha(1.0f);
+                    // Highlight this marker with star icon
+                    iconManager.highlightAsNearest(marker);
                     // Update the snippet to show distance
                     marker.setSnippet("User: " + item.sosCall.getUsername() +
                                     "\nTime: " + item.sosCall.getTime() +
                                     "\nDistance: " + String.format(Locale.getDefault(), "%.2f km", item.distance / 1000.0));
+
+                    // Click listener - show dialog with route button
+                    marker.setOnMarkerClickListener((clickedMarker, mapView) -> {
+                        new android.app.AlertDialog.Builder(getContext())
+                            .setTitle("SOS Call Details")
+                            .setMessage("User: " + item.sosCall.getUsername() +
+                                      "\nTime: " + item.sosCall.getTime() +
+                                      "\nDistance: " + String.format(Locale.getDefault(), "%.2f km", item.distance / 1000.0))
+                            .setPositiveButton("🗺️ Show Route", (dialog, which) -> {
+                                // Calculate and draw route
+                                if (routeManager != null && myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
+                                    GeoPoint currentLocation = myLocationOverlay.getMyLocation();
+                                    GeoPoint destination = clickedMarker.getPosition();
+
+                                    // Disable follow location
+                                    myLocationOverlay.disableFollowLocation();
+
+                                    Toast.makeText(getContext(), "Calculating route to " + item.sosCall.getUsername() + "...", Toast.LENGTH_SHORT).show();
+
+                                    routeManager.drawRoute(currentLocation, destination, new RouteManager.RouteCallback() {
+                                        @Override
+                                        public void onRouteCalculated(double distanceKm, double durationMinutes) {
+                                            Toast.makeText(getContext(),
+                                                    String.format(Locale.getDefault(),
+                                                            "Route to %s: %.1f km, ~%.0f min",
+                                                            item.sosCall.getUsername(), distanceKm, durationMinutes),
+                                                    Toast.LENGTH_LONG).show();
+
+                                            // Show return to location button
+                                            if (fabReturnToLocation != null) {
+                                                fabReturnToLocation.setVisibility(View.VISIBLE);
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onRouteError(String error) {
+                                            Toast.makeText(getContext(),
+                                                    "Route calculation failed: " + error,
+                                                    Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+
+                                    // Zoom to show both locations
+                                    controller.setZoom(14.0);
+                                }
+                            })
+                            .setNegativeButton("Close", null)
+                            .show();
+                        return true; // Consume the event
+                    });
+
                     break;
                 }
             }
@@ -539,6 +620,7 @@ public class fragment_map extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         if (executor != null) executor.shutdown();
+        if (routeManager != null) routeManager.shutdown();
     }
 
     @Override
@@ -680,6 +762,11 @@ public class fragment_map extends Fragment {
     private void setupReturnToLocationButton() {
         if (fabReturnToLocation != null) {
             fabReturnToLocation.setOnClickListener(v -> {
+                // Clear any active route
+                if (routeManager != null) {
+                    routeManager.clearRoute();
+                }
+
                 // Re-enable follow location
                 if (myLocationOverlay != null) {
                     myLocationOverlay.enableFollowLocation();
@@ -795,29 +882,5 @@ public class fragment_map extends Fragment {
             this.lat = lat;
             this.lon = lon;
         }
-    }
-
-    private Bitmap createPersonIconWithArrow() {
-        int width = 150; int height = 150;
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        Path arrowPath = new Path();
-        arrowPath.moveTo(width / 2f, height / 2f);
-        arrowPath.lineTo(width / 2f - 20, height / 2f + 40);
-        arrowPath.lineTo(width / 2f, height / 2f - 40);
-        arrowPath.lineTo(width / 2f + 20, height / 2f + 40);
-        arrowPath.close();
-        paint.setColor(Color.BLUE);
-        paint.setStyle(Paint.Style.FILL);
-        canvas.drawPath(arrowPath, paint);
-        paint.setColor(Color.BLUE);
-        canvas.drawCircle(width / 2f, height / 2f, 15, paint);
-        paint.setColor(Color.BLACK);
-        paint.setTextSize(30);
-        paint.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("You are here", width / 2f, height / 2f - 50, paint);
-        return bitmap;
     }
 }
