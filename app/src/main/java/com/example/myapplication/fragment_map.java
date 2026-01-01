@@ -73,13 +73,17 @@ public class fragment_map extends Fragment {
     private TextView tvDateDay;
     private TextView tvUserCount;
     private TextView tvDateMonthYear;
+    private TextView tvMapCoordinates;
     private EditText searchEditText;
     private ListView suggestionsList;
+    private com.google.android.material.floatingactionbutton.FloatingActionButton fabReturnToLocation;
     private ArrayAdapter<String> suggestionsAdapter;
     private List<SearchResult> searchResults;
     private Handler searchHandler;
     private ExecutorService executor;
     private Marker searchMarker;
+    private List<Marker> sosMarkers = new ArrayList<>();
+    private List<SOSCall> allSOSCalls = new ArrayList<>();
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -104,17 +108,24 @@ public class fragment_map extends Fragment {
         tvDateDay = view.findViewById(R.id.tvDateDay);
         tvUserCount = view.findViewById(R.id.tvUserCount);
         tvDateMonthYear = view.findViewById(R.id.tvDateMonthYear);
+        tvMapCoordinates = view.findViewById(R.id.tvMapCoordinates);
         View cardProfile = view.findViewById(R.id.cardProfile);
         searchEditText = view.findViewById(R.id.ETsearch);
         suggestionsList = view.findViewById(R.id.suggestionsList);
-        
+        fabReturnToLocation = view.findViewById(R.id.fabReturnToLocation);
+
+        // Setup return to location button
+        setupReturnToLocationButton();
+
         // Auto-select all text when clicking search bar
         searchEditText.setSelectAllOnFocus(true);
         
         updateUsernameDisplay();
         updateDateDisplay();
         loadStatistics();
+        loadAndPlotSOSCalls();
         setupSearchAutocomplete();
+        setupStatsSectionListeners(view);
 
         cardProfile.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), ProfileActivity.class);
@@ -152,13 +163,14 @@ public class fragment_map extends Fragment {
         });
 
         controller = mapView.getController();
-        controller.setZoom(15.0);
+        // Don't set default zoom - let it zoom to user location automatically
 
         GpsMyLocationProvider provider = new GpsMyLocationProvider(requireContext());
         myLocationOverlay = new MyLocationNewOverlay(provider, mapView);
         myLocationOverlay.enableMyLocation();
         myLocationOverlay.enableFollowLocation();
         myLocationOverlay.setDrawAccuracyEnabled(true);
+
 
         Bitmap personIcon = createPersonIconWithArrow();
         myLocationOverlay.setPersonIcon(personIcon);
@@ -174,7 +186,25 @@ public class fragment_map extends Fragment {
         });
 
         mapView.getOverlays().add(myLocationOverlay);
-        controller.setCenter(new GeoPoint(3.1207, 101.6544));
+        // Don't set a default center - let it use user's actual location
+
+        // Add scroll listener to update coordinates display
+        mapView.addMapListener(new org.osmdroid.events.MapListener() {
+            @Override
+            public boolean onScroll(org.osmdroid.events.ScrollEvent event) {
+                updateMapCoordinatesDisplay();
+                return true;
+            }
+
+            @Override
+            public boolean onZoom(org.osmdroid.events.ZoomEvent event) {
+                updateMapCoordinatesDisplay();
+                return true;
+            }
+        });
+
+        // Initial coordinate display update
+        updateMapCoordinatesDisplay();
 
         ImageView searchbutton = view.findViewById(R.id.searchIcon);
         searchbutton.setOnClickListener(new View.OnClickListener() {
@@ -227,7 +257,22 @@ public class fragment_map extends Fragment {
         tvDateMonthYear.setText(monthYear);
     }
 
+    private void updateMapCoordinatesDisplay() {
+        if (mapView != null && tvMapCoordinates != null) {
+            GeoPoint center = (GeoPoint) mapView.getMapCenter();
+            String coordText = String.format(Locale.getDefault(),
+                "Lat: %.6f, Lon: %.6f",
+                center.getLatitude(),
+                center.getLongitude());
+            tvMapCoordinates.setText(coordText);
+        }
+    }
+
     private void loadStatistics() {
+        // Start with empty displays - no placeholders
+        tvCasesCount.setText("");
+        tvUserCount.setText("");
+
         SupabaseManager.INSTANCE.getStatistics(new SupabaseManager.StatsCallback() {
             @Override
             public void onSuccess(int casesCount, int userCount) {
@@ -243,15 +288,234 @@ public class fragment_map extends Fragment {
             public void onError(String message) {
                 if (getActivity() != null && isAdded()) {
                     getActivity().runOnUiThread(() -> {
-                        tvCasesCount.setText("--");
-                        tvUserCount.setText("--");
-                        Toast.makeText(getContext(), "Failed to load statistics: " + message, 
+                        tvCasesCount.setText("");
+                        tvUserCount.setText("");
+                        Toast.makeText(getContext(), "Failed to load statistics: " + message,
                             Toast.LENGTH_SHORT).show();
                     });
                 }
             }
         });
     }
+    private void loadAndPlotSOSCalls() {
+        SupabaseManager.INSTANCE.getAllSOSCalls(new SupabaseManager.SOSCallsCallback() {
+            @Override
+            public void onSuccess(List<SOSCall> sosCalls) {
+                if (getActivity() != null && isAdded()) {
+                    getActivity().runOnUiThread(() -> {
+                        // Store all SOS calls for distance calculations
+                        allSOSCalls.clear();
+                        allSOSCalls.addAll(sosCalls);
+                        
+                        // Clear existing SOS markers
+                        for (Marker marker : sosMarkers) {
+                            mapView.getOverlays().remove(marker);
+                        }
+                        sosMarkers.clear();
+
+                        // Add markers for each SOS call
+                        for (SOSCall sosCall : sosCalls) {
+                            // GeoPoint takes (latitude, longitude) = (y, x)
+                            GeoPoint point = new GeoPoint(sosCall.getX_coordinate(), sosCall.getY_coordinate());
+                            Marker marker = new Marker(mapView);
+                            marker.setPosition(point);
+                            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+                            marker.setTitle("SOS Call");
+                            marker.setSnippet("User: " + sosCall.getUsername() + "\nTime: " + sosCall.getTime());
+                            marker.setIcon(getResources().getDrawable(android.R.drawable.ic_dialog_alert, null));
+                            mapView.getOverlays().add(marker);
+                            sosMarkers.add(marker);
+                        }
+                        mapView.invalidate();
+
+                        // Automatically highlight nearest 5 SOS calls
+                        autoHighlightNearestSOSCalls();
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                if (getActivity() != null && isAdded()) {
+                    getActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), "Failed to load SOS calls: " + message, 
+                            Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        });
+    }
+
+    private void setupStatsSectionListeners(View view) {
+        View layoutCasesSection = view.findViewById(R.id.layoutCasesSection);
+        View layoutDateSection = view.findViewById(R.id.layoutDateSection);
+        View layoutUserSection = view.findViewById(R.id.layoutUserSection);
+
+        View.OnClickListener nearestSOSListener = v -> showNearestSOSCalls();
+
+        // Set click listeners for all three sections
+        if (layoutCasesSection != null) {
+            layoutCasesSection.setOnClickListener(nearestSOSListener);
+        }
+        if (layoutDateSection != null) {
+            layoutDateSection.setOnClickListener(nearestSOSListener);
+        }
+        if (layoutUserSection != null) {
+            layoutUserSection.setOnClickListener(nearestSOSListener);
+        }
+    }
+
+    private void autoHighlightNearestSOSCalls() {
+        // Get current user location
+        GeoPoint userLocation = null;
+        if (myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
+            userLocation = myLocationOverlay.getMyLocation();
+        } else if (getContext() != null) {
+            LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+            if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (lastLocation == null) {
+                    lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
+                if (lastLocation != null) {
+                    userLocation = new GeoPoint(lastLocation.getLatitude(), lastLocation.getLongitude());
+                }
+            }
+        }
+
+        if (userLocation == null || allSOSCalls.isEmpty()) {
+            return; // Silently return if no location or no SOS calls
+        }
+
+        // Calculate distances and sort
+        final GeoPoint finalUserLocation = userLocation;
+        List<NearestSOSDialog.SOSCallWithDistance> sosCallsWithDistances = new ArrayList<>();
+
+        for (SOSCall sosCall : allSOSCalls) {
+            // GeoPoint takes (latitude, longitude) = (y, x) but we store as (x, y)
+            GeoPoint sosLocation = new GeoPoint(sosCall.getX_coordinate(), sosCall.getY_coordinate());
+            double distance = calculateDistance(finalUserLocation, sosLocation);
+            sosCallsWithDistances.add(new NearestSOSDialog.SOSCallWithDistance(sosCall, distance));
+        }
+
+        // Sort by distance and get top 5
+        sosCallsWithDistances.sort((a, b) -> Double.compare(a.distance, b.distance));
+        List<NearestSOSDialog.SOSCallWithDistance> nearest5 = sosCallsWithDistances.subList(0, Math.min(5, sosCallsWithDistances.size()));
+
+        // Automatically highlight on map without showing dialog
+        highlightNearestSOSCalls(nearest5, finalUserLocation);
+    }
+
+    private void showNearestSOSCalls() {
+        // Get current user location
+        GeoPoint userLocation = null;
+        if (myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
+            userLocation = myLocationOverlay.getMyLocation();
+        } else if (getContext() != null) {
+            LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+            if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (lastLocation == null) {
+                    lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
+                if (lastLocation != null) {
+                    userLocation = new GeoPoint(lastLocation.getLatitude(), lastLocation.getLongitude());
+                }
+            }
+        }
+
+        if (userLocation == null) {
+            Toast.makeText(getContext(), "Unable to get current location", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (allSOSCalls.isEmpty()) {
+            Toast.makeText(getContext(), "No SOS calls available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Calculate distances and sort
+        final GeoPoint finalUserLocation = userLocation;
+        List<NearestSOSDialog.SOSCallWithDistance> sosCallsWithDistances = new ArrayList<>();
+
+        for (SOSCall sosCall : allSOSCalls) {
+            // GeoPoint takes (latitude, longitude) = (y, x) but we store as (x, y)
+            GeoPoint sosLocation = new GeoPoint(sosCall.getX_coordinate(), sosCall.getY_coordinate());
+            double distance = calculateDistance(finalUserLocation, sosLocation);
+            sosCallsWithDistances.add(new NearestSOSDialog.SOSCallWithDistance(sosCall, distance));
+        }
+
+        // Sort by distance and get top 5
+        sosCallsWithDistances.sort((a, b) -> Double.compare(a.distance, b.distance));
+        List<NearestSOSDialog.SOSCallWithDistance> nearest5 = sosCallsWithDistances.subList(0, Math.min(5, sosCallsWithDistances.size()));
+
+        // Immediately highlight on map
+        highlightNearestSOSCalls(nearest5, finalUserLocation);
+
+        // Show dialog using separate class
+        NearestSOSDialog.show(getContext(), nearest5, finalUserLocation, (sosCall, sosPoint) -> {
+            // Disable follow location to prevent map from springing back to user location
+            if (myLocationOverlay != null) {
+                myLocationOverlay.disableFollowLocation();
+            }
+
+            // Use animateTo for smooth navigation
+            controller.animateTo(sosPoint);
+            controller.setZoom(17.0);
+
+            // Force map refresh
+            mapView.invalidate();
+        });
+    }
+
+    private double calculateDistance(GeoPoint point1, GeoPoint point2) {
+        // Haversine formula to calculate distance in meters
+        double earthRadius = 6371000; // meters
+        double lat1 = Math.toRadians(point1.getLatitude());
+        double lat2 = Math.toRadians(point2.getLatitude());
+        double deltaLat = Math.toRadians(point2.getLatitude() - point1.getLatitude());
+        double deltaLon = Math.toRadians(point2.getLongitude() - point1.getLongitude());
+
+        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                   Math.cos(lat1) * Math.cos(lat2) *
+                   Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return earthRadius * c;
+    }
+
+    private void highlightNearestSOSCalls(List<NearestSOSDialog.SOSCallWithDistance> nearest5, GeoPoint userLocation) {
+        // Reset all SOS markers to default red alert icon
+        for (Marker marker : sosMarkers) {
+            marker.setIcon(getResources().getDrawable(android.R.drawable.ic_dialog_alert, null));
+            marker.setAlpha(0.5f); // Make non-nearest markers semi-transparent
+        }
+
+        // Highlight the nearest 5 SOS calls with a different color and full opacity
+        for (NearestSOSDialog.SOSCallWithDistance item : nearest5) {
+            for (Marker marker : sosMarkers) {
+                GeoPoint markerPos = marker.getPosition();
+                // Check if this marker matches the nearest SOS call (comparing with x=lat, y=lon)
+                if (Math.abs(markerPos.getLatitude() - item.sosCall.getX_coordinate()) < 0.0001 &&
+                    Math.abs(markerPos.getLongitude() - item.sosCall.getY_coordinate()) < 0.0001) {
+                    // Highlight this marker with green icon and full opacity
+                    marker.setIcon(getResources().getDrawable(android.R.drawable.star_big_on, null));
+                    marker.setAlpha(1.0f);
+                    // Update the snippet to show distance
+                    marker.setSnippet("User: " + item.sosCall.getUsername() +
+                                    "\nTime: " + item.sosCall.getTime() +
+                                    "\nDistance: " + String.format(Locale.getDefault(), "%.2f km", item.distance / 1000.0));
+                    break;
+                }
+            }
+        }
+
+        // Refresh the map to show the changes
+        mapView.invalidate();
+    }
+
 
     @Override
     public void onResume() {
@@ -261,6 +525,7 @@ public class fragment_map extends Fragment {
         updateUsernameDisplay();
         updateDateDisplay();
         loadStatistics();
+        loadAndPlotSOSCalls();
     }
 
     @Override
@@ -330,7 +595,9 @@ public class fragment_map extends Fragment {
             public void onComplete(boolean success, String message) {
                 if (success) {
                     Toast.makeText(getContext(), "SOS Emergency Call Initiated!\nLocation: " + 
-                        String.format("%.6f, %.6f", finalLat, finalLon), Toast.LENGTH_LONG).show();
+                        String.format(Locale.getDefault(), "%.6f, %.6f", finalLat, finalLon), Toast.LENGTH_LONG).show();
+                    // Reload SOS calls to show the new marker
+                    loadAndPlotSOSCalls();
                 } else {
                     Toast.makeText(getContext(), "SOS call failed: " + message, Toast.LENGTH_SHORT).show();
                 }
@@ -404,9 +671,27 @@ public class fragment_map extends Fragment {
 
     private void hideKeyboard() {
         if (getActivity() != null && searchEditText != null) {
-            InputMethodManager imm = (InputMethodManager) 
+            InputMethodManager imm = (InputMethodManager)
                 getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(searchEditText.getWindowToken(), 0);
+        }
+    }
+
+    private void setupReturnToLocationButton() {
+        if (fabReturnToLocation != null) {
+            fabReturnToLocation.setOnClickListener(v -> {
+                // Re-enable follow location
+                if (myLocationOverlay != null) {
+                    myLocationOverlay.enableFollowLocation();
+                    if (myLocationOverlay.getMyLocation() != null) {
+                        controller.animateTo(myLocationOverlay.getMyLocation());
+                        controller.setZoom(15.0);
+                    }
+                }
+                // Hide the button after returning to location
+                fabReturnToLocation.setVisibility(View.GONE);
+                Toast.makeText(getContext(), "Returned to your location", Toast.LENGTH_SHORT).show();
+            });
         }
     }
 
@@ -472,8 +757,19 @@ public class fragment_map extends Fragment {
 
     private void moveToLocation(double lat, double lon, String name) {
         GeoPoint point = new GeoPoint(lat, lon);
+
+        // Disable follow location when searching
+        if (myLocationOverlay != null) {
+            myLocationOverlay.disableFollowLocation();
+        }
+
         controller.animateTo(point);
         controller.setZoom(17.0);
+
+        // Show return to location button
+        if (fabReturnToLocation != null) {
+            fabReturnToLocation.setVisibility(View.VISIBLE);
+        }
 
         // Remove previous search marker
         if (searchMarker != null) {

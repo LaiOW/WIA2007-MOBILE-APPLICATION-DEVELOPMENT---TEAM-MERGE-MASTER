@@ -250,4 +250,24 @@ object SupabaseManager {
             }
         }
     }
+
+    interface SOSCallsCallback {
+        fun onSuccess(sosCalls: List<SOSCall>)
+        fun onError(message: String?)
+    }
+
+    fun getAllSOSCalls(callback: SOSCallsCallback) {
+        runOnIo {
+            try {
+                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()
+                withContext(Dispatchers.Main) {
+                    callback.onSuccess(sosCallsResponse)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    callback.onError(e.message)
+                }
+            }
+        }
+    }
 }
