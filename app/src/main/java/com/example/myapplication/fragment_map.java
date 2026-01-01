@@ -160,6 +160,31 @@ public class fragment_map extends Fragment {
             return false;
         });
 
+        // Add map click listener to close info windows when tapping empty space
+        org.osmdroid.events.MapEventsReceiver mapEventsReceiver = new org.osmdroid.events.MapEventsReceiver() {
+            @Override
+            public boolean singleTapConfirmedHelper(GeoPoint p) {
+                // Close all open info windows when map (not marker) is clicked
+                try {
+                    for (Marker marker : sosMarkers) {
+                        marker.closeInfoWindow();
+                    }
+                } catch (Exception e) {
+                    // Ignore errors
+                }
+                return false; // Return false to allow other overlays to handle the event
+            }
+
+            @Override
+            public boolean longPressHelper(GeoPoint p) {
+                return false;
+            }
+        };
+
+        org.osmdroid.views.overlay.MapEventsOverlay mapEventsOverlay =
+            new org.osmdroid.views.overlay.MapEventsOverlay(mapEventsReceiver);
+        mapView.getOverlays().add(0, mapEventsOverlay); // Add at index 0 so it's processed last
+
         controller = mapView.getController();
         // Don't set default zoom - let it zoom to user location automatically
 
@@ -538,54 +563,108 @@ public class fragment_map extends Fragment {
                                     "\nTime: " + item.sosCall.getTime() +
                                     "\nDistance: " + String.format(Locale.getDefault(), "%.2f km", item.distance / 1000.0));
 
-                    // Click listener - show dialog with route button
-                    marker.setOnMarkerClickListener((clickedMarker, mapView) -> {
-                        new android.app.AlertDialog.Builder(getContext())
-                            .setTitle("SOS Call Details")
-                            .setMessage("User: " + item.sosCall.getUsername() +
-                                      "\nTime: " + item.sosCall.getTime() +
-                                      "\nDistance: " + String.format(Locale.getDefault(), "%.2f km", item.distance / 1000.0))
-                            .setPositiveButton("🗺️ Show Route", (dialog, which) -> {
-                                // Calculate and draw route
-                                if (routeManager != null && myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
-                                    GeoPoint currentLocation = myLocationOverlay.getMyLocation();
-                                    GeoPoint destination = clickedMarker.getPosition();
+                    // Create custom info window for this marker
+                    IconManager.CustomInfoWindow infoWindow = new IconManager.CustomInfoWindow(mapView, requireContext());
 
-                                    // Disable follow location
-                                    myLocationOverlay.disableFollowLocation();
+                    // Store references for callback
+                    final Marker finalMarker = marker;
+                    final SOSCall finalSosCall = item.sosCall;
 
-                                    Toast.makeText(getContext(), "Calculating route to " + item.sosCall.getUsername() + "...", Toast.LENGTH_SHORT).show();
+                    // Set callback for when bubble "button" is clicked
+                    infoWindow.setOnRouteClickListener(() -> {
+                        // Calculate and draw route
+                        if (routeManager != null && myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
+                            GeoPoint currentLocation = myLocationOverlay.getMyLocation();
+                            GeoPoint destination = finalMarker.getPosition();
 
-                                    routeManager.drawRoute(currentLocation, destination, new RouteManager.RouteCallback() {
-                                        @Override
-                                        public void onRouteCalculated(double distanceKm, double durationMinutes) {
-                                            Toast.makeText(getContext(),
-                                                    String.format(Locale.getDefault(),
-                                                            "Route to %s: %.1f km, ~%.0f min",
-                                                            item.sosCall.getUsername(), distanceKm, durationMinutes),
-                                                    Toast.LENGTH_LONG).show();
+                            // Disable follow location
+                            myLocationOverlay.disableFollowLocation();
 
-                                            // Show return to location button
-                                            if (fabReturnToLocation != null) {
-                                                fabReturnToLocation.setVisibility(View.VISIBLE);
-                                            }
-                                        }
+                            Toast.makeText(getContext(), "Calculating route to " + finalSosCall.getUsername() + "...", Toast.LENGTH_SHORT).show();
 
-                                        @Override
-                                        public void onRouteError(String error) {
-                                            Toast.makeText(getContext(),
-                                                    "Route calculation failed: " + error,
-                                                    Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
+                            routeManager.drawRoute(currentLocation, destination, new RouteManager.RouteCallback() {
+                                @Override
+                                public void onRouteCalculated(double distanceKm, double durationMinutes) {
+                                    Toast.makeText(getContext(),
+                                            String.format(Locale.getDefault(),
+                                                    "Route to %s: %.1f km, ~%.0f min",
+                                                    finalSosCall.getUsername(), distanceKm, durationMinutes),
+                                            Toast.LENGTH_LONG).show();
 
-                                    // Zoom to show both locations
-                                    controller.setZoom(14.0);
+                                    // Show return to location button
+                                    if (fabReturnToLocation != null) {
+                                        fabReturnToLocation.setVisibility(View.VISIBLE);
+                                    }
+
+                                    // Close info window after route is shown
+                                    finalMarker.closeInfoWindow();
                                 }
-                            })
-                            .setNegativeButton("Close", null)
-                            .show();
-                        return true; // Consume the event
+
+                                @Override
+                                public void onRouteError(String error) {
+                                    Toast.makeText(getContext(),
+                                            "Route calculation failed: " + error,
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            // Zoom to show both locations
+                            controller.setZoom(14.0);
+                        }
+                    });
+
+                    // Set the custom info window on the marker
+                    marker.setInfoWindow(infoWindow);
+
+                    // Click listener - first click shows bubble, second click triggers route
+                    marker.setOnMarkerClickListener((clickedMarker, mapView) -> {
+                        // If info window is already showing, trigger route calculation
+                        if (clickedMarker.isInfoWindowShown()) {
+                            Toast.makeText(getContext(), "Calculating route to " + finalSosCall.getUsername() + "...", Toast.LENGTH_SHORT).show();
+
+                            // Calculate and draw route
+                            if (routeManager != null && myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
+                                GeoPoint currentLocation = myLocationOverlay.getMyLocation();
+                                GeoPoint destination = clickedMarker.getPosition();
+
+                                // Disable follow location
+                                myLocationOverlay.disableFollowLocation();
+
+                                routeManager.drawRoute(currentLocation, destination, new RouteManager.RouteCallback() {
+                                    @Override
+                                    public void onRouteCalculated(double distanceKm, double durationMinutes) {
+                                        Toast.makeText(getContext(),
+                                                String.format(Locale.getDefault(),
+                                                        "Route to %s: %.1f km, ~%.0f min",
+                                                        finalSosCall.getUsername(), distanceKm, durationMinutes),
+                                                Toast.LENGTH_LONG).show();
+
+                                        // Show return to location button
+                                        if (fabReturnToLocation != null) {
+                                            fabReturnToLocation.setVisibility(View.VISIBLE);
+                                        }
+
+                                        // Close info window after route is shown
+                                        clickedMarker.closeInfoWindow();
+                                    }
+
+                                    @Override
+                                    public void onRouteError(String error) {
+                                        Toast.makeText(getContext(),
+                                                "Route calculation failed: " + error,
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+
+                                // Zoom to show both locations
+                                controller.setZoom(14.0);
+                            }
+                            return true; // Event consumed
+                        } else {
+                            // First click - show info window
+                            clickedMarker.showInfoWindow();
+                            return true; // Event consumed
+                        }
                     });
 
                     break;

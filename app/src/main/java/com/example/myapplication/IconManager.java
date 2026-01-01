@@ -8,12 +8,18 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.drawable.Drawable;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.infowindow.MarkerInfoWindow;
 
 /**
  * IconManager handles all icon-related operations for the map
- * Including creating custom icons and setting marker icons
+ * Including creating custom icons, setting marker icons, and custom info windows
  */
 public class IconManager {
 
@@ -129,5 +135,89 @@ public class IconManager {
     public void highlightAsNearest(Marker marker) {
         setStarIconHighlighted(marker);
     }
-}
 
+    /**
+     * Custom compact info window for SOS markers with route button
+     */
+    public static class CustomInfoWindow extends MarkerInfoWindow {
+
+        private Runnable onRouteClick;
+        private Context context;
+
+        public CustomInfoWindow(MapView mapView, Context context) {
+            super(R.layout.bonuspack_bubble, mapView);
+            this.context = context;
+        }
+
+        public void setOnRouteClickListener(Runnable listener) {
+            this.onRouteClick = listener;
+        }
+
+        @Override
+        public void onOpen(Object item) {
+            try {
+                super.onOpen(item);
+
+                if (!(item instanceof Marker)) {
+                    return;
+                }
+
+                Marker marker = (Marker) item;
+
+                if (mView == null) {
+                    return;
+                }
+
+                // Set title
+                TextView txtTitle = mView.findViewById(R.id.bubble_title);
+                TextView txtDescription = mView.findViewById(R.id.bubble_description);
+                TextView txtSubDescription = mView.findViewById(R.id.bubble_subdescription);
+                TextView txtMoreInfo = mView.findViewById(R.id.bubble_moreinfo);
+
+                if (txtTitle != null && marker.getTitle() != null) {
+                    txtTitle.setText(marker.getTitle());
+                }
+
+                if (txtDescription != null && txtSubDescription != null && marker.getSnippet() != null) {
+                    String[] lines = marker.getSnippet().split("\n");
+                    StringBuilder desc = new StringBuilder();
+                    StringBuilder subDesc = new StringBuilder();
+
+                    for (String line : lines) {
+                        if (line.startsWith("User:")) {
+                            desc.append(line);
+                        } else if (line.startsWith("Time:")) {
+                            if (desc.length() > 0) {
+                                desc.append("\n");
+                            }
+                            desc.append(line);
+                        } else if (line.startsWith("Distance:")) {
+                            subDesc.append(line);
+                        }
+                    }
+
+                    txtDescription.setText(desc.toString());
+                    txtSubDescription.setText(subDesc.toString());
+                }
+
+                // The hint text is already set in XML, no need to modify it
+
+                android.util.Log.d("CustomInfoWindow", "InfoWindow setup complete");
+
+            } catch (Exception e) {
+                // Prevent crash - log error
+                android.util.Log.e("CustomInfoWindow", "Error in onOpen: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onClose() {
+            try {
+                super.onClose();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
