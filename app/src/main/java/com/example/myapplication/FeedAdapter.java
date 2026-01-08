@@ -5,7 +5,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Button;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.squareup.picasso.Picasso;
@@ -30,7 +29,7 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
     public void onBindViewHolder(@NonNull FeedViewHolder holder, int position) {
         Post post = postList.get(position);
         holder.user_name.setText(post.getUserName() != null ? post.getUserName() : "Anonymous");
-        
+
         if (post.getTitle() != null && !post.getTitle().isEmpty()) {
             holder.post_title.setText(post.getTitle());
             holder.post_title.setVisibility(View.VISIBLE);
@@ -48,6 +47,16 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
                  .into(holder.post_image);
         } else {
             holder.post_image.setVisibility(View.GONE);
+        }
+
+        // Load user profile image
+        if (post.getUserProfileImage() != null && !post.getUserProfileImage().isEmpty()) {
+            Picasso.get()
+                    .load(post.getUserProfileImage())
+                    .placeholder(R.drawable.ic_launcher_foreground)
+                    .into(holder.profile_image);
+        } else {
+            holder.profile_image.setImageResource(R.drawable.ic_launcher_foreground);
         }
 
         int likeCount = post.getLikeCount() != null ? post.getLikeCount() : 0;
@@ -82,7 +91,6 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
     static class FeedViewHolder extends RecyclerView.ViewHolder {
         TextView user_name, post_title, post_text, like_count;
         ImageView profile_image, post_image, ic_heart;
-        Button btn_on_my_way;
 
         public FeedViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -93,7 +101,6 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
             post_image = itemView.findViewById(R.id.post_image);
             ic_heart = itemView.findViewById(R.id.ic_heart);
             like_count = itemView.findViewById(R.id.like_count);
-            btn_on_my_way = itemView.findViewById(R.id.btn_on_my_way);
         }
     }
 }

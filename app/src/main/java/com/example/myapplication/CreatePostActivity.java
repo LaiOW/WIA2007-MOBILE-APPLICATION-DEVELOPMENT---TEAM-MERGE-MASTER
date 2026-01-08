@@ -1,6 +1,8 @@
 package com.example.myapplication;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -64,7 +66,7 @@ public class CreatePostActivity extends AppCompatActivity {
 
                 if (selectedImageUri != null) {
                     try {
-                        InputStream inputStream = getContentResolver().openInputStream(selectedImageUri);
+                        InputStream inputStream = getContentResolver().openInputStream(selectedImageUri); 
                         uploadImageAndSavePost(userName, postTitle, postContent, inputStream);
                     } catch (FileNotFoundException e) {
                         Toast.makeText(this, "Image not found", Toast.LENGTH_SHORT).show();
@@ -98,16 +100,23 @@ public class CreatePostActivity extends AppCompatActivity {
         });
     }
 
-    private void savePostToDatabase(String userName, String title, String content, String imageUrl) {
+    private void savePostToDatabase(String userName, String title, String content, String imageUrl) {     
         Post post = new Post(userName, title, content, "General");
         if (imageUrl != null) {
             post.setImageUri(imageUrl);
         }
 
+        // Get user profile image from SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String userProfileImage = sharedPreferences.getString("profile_image_uri", null);
+        if (userProfileImage != null) {
+            post.setUserProfileImage(userProfileImage);
+        }
+
         SupabaseManager.INSTANCE.savePost(post, new SupabaseManager.DatabaseCallback<Post>() {
             @Override
             public void onSuccess(List<Post> data) {
-                Toast.makeText(CreatePostActivity.this, "Post Published!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(CreatePostActivity.this, "Post Published!", Toast.LENGTH_SHORT).show();    
                 setResult(RESULT_OK);
                 finish();
             }
