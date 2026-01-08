@@ -21,7 +21,10 @@ import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.textfield.TextInputEditText;
+import com.squareup.picasso.Picasso;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -29,10 +32,10 @@ import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    // UI Components updated to match new XML types
-    private ShapeableImageView ivProfilePic; // Changed to ShapeableImageView
-    private FloatingActionButton btnChangeImage; // Changed from TextView to FAB
-    private TextInputEditText tvEmail; // Email is now inside an InputEditText
+    // UI Components
+    private ShapeableImageView ivProfilePic;
+    private FloatingActionButton btnChangeImage;
+    private TextInputEditText tvEmail;
     private TextInputEditText etName, etBio;
     private TextView tvCert1, tvCert2, tvCert3;
     private Button btnSave, btnLogout;
@@ -50,18 +53,17 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        // Initialize Views (Updated IDs)
+        // Initialize Views
         ivProfilePic = findViewById(R.id.iv_profile_pic);
-        btnChangeImage = findViewById(R.id.btn_change_image); // New ID for Camera Button
+        btnChangeImage = findViewById(R.id.btn_change_image);
 
         tvEmail = findViewById(R.id.tv_email);
         etName = findViewById(R.id.et_name);
-        etBio = findViewById(R.id.et_bio); // Updated ID from tv_bio to et_bio
+        etBio = findViewById(R.id.et_bio);
 
         btnSave = findViewById(R.id.btn_save);
         btnLogout = findViewById(R.id.btn_logout);
 
-        // Note: Ensure your XML has this LinearLayout if you want to see the badges
         badgeContainer = findViewById(R.id.ll_badges);
 
         tvCert1 = findViewById(R.id.tv_cert_1);
@@ -120,7 +122,7 @@ public class ProfileActivity extends AppCompatActivity {
             SupabaseManager.INSTANCE.signOut((success, message) -> {
                 if (success) {
                     Intent intent = new Intent(ProfileActivity.this, Login.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);     
                     startActivity(intent);
                     finish();
                 } else {
@@ -134,14 +136,49 @@ public class ProfileActivity extends AppCompatActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        ivProfilePic.setImageURI(uri);
-                        sharedPreferences.edit().putString("profile_image_uri", uri.toString()).apply();
+                        uploadImageToSupabase(uri);
                     }
                 }
         );
 
-        // Change profile image click (Now attached to the FloatingActionButton)
         btnChangeImage.setOnClickListener(v -> pickImageLauncher.launch("image/*"));
+    }
+
+    private void uploadImageToSupabase(Uri uri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            if (inputStream == null) return;
+
+            Toast.makeText(this, "Uploading image...", Toast.LENGTH_SHORT).show();
+            
+            // Create a unique filename
+            String fileName = "profile_" + System.currentTimeMillis() + ".jpg";
+
+            SupabaseManager.INSTANCE.uploadImage(inputStream, fileName, new SupabaseManager.StorageCallback() {
+                @Override
+                public void onSuccess(String imageUrl) {
+                    // Update SharedPreferences with the new remote URL
+                    sharedPreferences.edit().putString("profile_image_uri", imageUrl).apply();
+                    
+                    // Load image into view using Picasso
+                    Picasso.get()
+                            .load(imageUrl)
+                            .placeholder(R.drawable.ic_launcher_background) // Add a placeholder if you have one
+                            .into(ivProfilePic);
+                            
+                    Toast.makeText(ProfileActivity.this, "Profile picture updated!", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onError(String message) {
+                    Toast.makeText(ProfileActivity.this, "Upload failed: " + message, Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void loadUserInfo() {
@@ -159,8 +196,15 @@ public class ProfileActivity extends AppCompatActivity {
 
             // Load profile image
             String imageUriString = sharedPreferences.getString("profile_image_uri", null);
-            if (imageUriString != null) {
-                ivProfilePic.setImageURI(Uri.parse(imageUriString));
+            if (imageUriString != null && !imageUriString.isEmpty()) {
+                // Use Picasso to handle both web URLs (http/https) and local files (file://)
+                // invalidate() is not directly available on simple load, but Picasso handles caching.
+                // Forcing reload can be done with memoryPolicy(MemoryPolicy.NO_CACHE) if needed, 
+                // but usually the URL change is enough.
+                Picasso.get()
+                       .load(imageUriString)
+                       .placeholder(R.drawable.ic_launcher_background)
+                       .into(ivProfilePic);
             }
 
             // Load certificates
@@ -188,7 +232,6 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void updateBadges() {
-        // Safety check in case you didn't add the linear layout back to XML
         if (badgeContainer == null) return;
 
         badgeContainer.removeAllViews();
@@ -199,10 +242,8 @@ public class ProfileActivity extends AppCompatActivity {
             card.setLayoutParams(params);
             card.setRadius(24);
             card.setCardElevation(4);
-            // Ensure no extra padding interferes with our custom internal layout
             card.setContentPadding(0,0,0,0);
 
-            // Set card background color based on certificate
             switch (c) {
                 case "Helped more than 10 incidents":
                     card.setCardBackgroundColor(0xFFFFA07A); // light red
@@ -225,7 +266,6 @@ public class ProfileActivity extends AppCompatActivity {
             ));
             innerLayout.setGravity(android.view.Gravity.CENTER);
 
-            // Safety check for map values
             Integer drawableId = certBadgeMap.get(c);
             if (drawableId != null) {
                 ImageView badgeIcon = new ImageView(this);
@@ -237,7 +277,6 @@ public class ProfileActivity extends AppCompatActivity {
             }
 
             TextView label = new TextView(this);
-            // Make label shorter for the small card if needed
             label.setText("Badge");
             label.setTextSize(10f);
             label.setTextColor(0xFFFFFFFF);
