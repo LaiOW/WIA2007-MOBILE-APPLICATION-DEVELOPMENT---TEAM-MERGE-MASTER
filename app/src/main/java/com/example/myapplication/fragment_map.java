@@ -72,7 +72,7 @@ public class fragment_map extends Fragment {
     private TextView tvMapCoordinates;
     private EditText searchEditText;
     private ListView suggestionsList;
-    private com.google.android.material.floatingactionbutton.FloatingActionButton fabReturnToLocation;
+    private com.google.android.material.floatingactionbutton.FloatingActionButton fabReturnToLocation; private com.google.android.material.floatingactionbutton.FloatingActionButton fabFavorites;
     private RouteManager routeManager;
     private IconManager iconManager;
     private ArrayAdapter<String> suggestionsAdapter;
@@ -110,7 +110,20 @@ public class fragment_map extends Fragment {
         View cardProfile = view.findViewById(R.id.cardProfile);
         searchEditText = view.findViewById(R.id.ETsearch);
         suggestionsList = view.findViewById(R.id.suggestionsList);
-        fabReturnToLocation = view.findViewById(R.id.fabReturnToLocation);
+                fabReturnToLocation = view.findViewById(R.id.fabReturnToLocation);
+        fabFavorites = view.findViewById(R.id.fabFavorites);
+
+        // Setup Favorites FAB
+        if (fabFavorites != null) {
+            fabFavorites.setOnClickListener(v -> {
+                 if (getActivity() != null) {
+                     getActivity().getSupportFragmentManager().beginTransaction()
+                         .replace(R.id.main, new FavoritesFragment())
+                         .addToBackStack(null)
+                         .commit();
+                 }
+            });
+        }
 
         // Setup return to location button
         setupReturnToLocationButton();
@@ -861,7 +874,7 @@ public class fragment_map extends Fragment {
         }
     }
 
-    private void searchLocation(String query) {
+    public void searchLocation(String query) {
         executor.execute(() -> {
             try {
                 String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString());

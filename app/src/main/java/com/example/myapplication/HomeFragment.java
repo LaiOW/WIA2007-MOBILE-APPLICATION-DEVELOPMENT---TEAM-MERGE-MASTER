@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
@@ -33,7 +34,7 @@ public class HomeFragment extends Fragment {
         super.onCreate(savedInstanceState);
         createPostLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            result -> { 
+            result -> {
                 // Refresh posts when returning from creating a post
                 fetchPosts();
             });
@@ -90,12 +91,12 @@ public class HomeFragment extends Fragment {
 
     private void updateUsernameDisplay() {
         if (getContext() == null) return;
-        
+
         String currentUserEmail = SupabaseManager.INSTANCE.getCurrentUserEmail();
         if (currentUserEmail != null) {
             SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
             String savedName = sharedPreferences.getString("display_name", null);
-            
+
             if (savedName != null) {
                 tvUsernameTop.setText(savedName);
             } else {
