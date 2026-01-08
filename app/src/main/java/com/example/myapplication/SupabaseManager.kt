@@ -41,7 +41,7 @@ object SupabaseManager {
         install(Auth)
         install(Postgrest)
         install(Storage)
-        
+
         defaultSerializer = KotlinXSerializer(Json {
             ignoreUnknownKeys = true
             explicitNulls = false
@@ -136,7 +136,7 @@ object SupabaseManager {
     fun isLoggedIn(): Boolean {
         // More robust check for session status
         val status = client.auth.sessionStatus.value
-        return status is SessionStatus.Authenticated || client.auth.currentSessionOrNull() != null
+        return status is SessionStatus.Authenticated || client.auth.currentSessionOrNull() != null        
     }
 
     // Database Operations
@@ -175,9 +175,9 @@ object SupabaseManager {
         runOnIo {
             try {
                 val byteArray = inputStream.readBytes()
-                val path = "private/"
-                client.storage.from(POST_BUCKET_NAME).upload(path, byteArray, upsert = false)
-                val publicUrl = client.storage.from(POST_BUCKET_NAME).publicUrl(path)
+                val fullPath = "private/$fileName"
+                client.storage.from(POST_BUCKET_NAME).upload(fullPath, byteArray, upsert = true)
+                val publicUrl = client.storage.from(POST_BUCKET_NAME).publicUrl(fullPath)
                 withContext(Dispatchers.Main) {
                     callback.onSuccess(publicUrl)
                 }
