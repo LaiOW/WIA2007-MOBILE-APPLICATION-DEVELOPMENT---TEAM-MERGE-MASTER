@@ -16,6 +16,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.UUID;
 
 public class CreatePostActivity extends AppCompatActivity {
 
@@ -84,7 +85,8 @@ public class CreatePostActivity extends AppCompatActivity {
     }
 
     private void uploadImageAndSavePost(String userName, String title, String content, InputStream inputStream) {
-        String fileName = System.currentTimeMillis() + ".jpg";
+        // Use UUID for unique filename to prevent collisions and caching issues
+        String fileName = UUID.randomUUID().toString() + ".jpg";
         SupabaseManager.INSTANCE.uploadImage(inputStream, fileName, new SupabaseManager.StorageCallback() {
             @Override
             public void onSuccess(String imageUrl) {

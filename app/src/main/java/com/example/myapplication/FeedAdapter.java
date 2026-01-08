@@ -39,6 +39,7 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
 
         holder.post_text.setText(post.getContent() != null ? post.getContent() : "");
 
+        // Handle Post Image
         if (post.getImageUri() != null && !post.getImageUri().isEmpty()) {
             holder.post_image.setVisibility(View.VISIBLE);
             Picasso.get()
@@ -46,16 +47,20 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
                  .placeholder(R.drawable.ic_launcher_background)
                  .into(holder.post_image);
         } else {
+            // Cancel any pending request and clear the view to prevent recycling issues
+            Picasso.get().cancelRequest(holder.post_image);
+            holder.post_image.setImageDrawable(null);
             holder.post_image.setVisibility(View.GONE);
         }
 
-        // Load user profile image
+        // Handle Profile Image
         if (post.getUserProfileImage() != null && !post.getUserProfileImage().isEmpty()) {
             Picasso.get()
                     .load(post.getUserProfileImage())
                     .placeholder(R.drawable.ic_launcher_foreground)
                     .into(holder.profile_image);
         } else {
+            Picasso.get().cancelRequest(holder.profile_image);
             holder.profile_image.setImageResource(R.drawable.ic_launcher_foreground);
         }
 

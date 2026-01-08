@@ -10,6 +10,12 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.decodeRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -28,6 +34,8 @@ import kotlinx.serialization.json.Json
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 object SupabaseManager {
     private const val SUPABASE_URL = "https://syuyeszaltkqewyeqwho.supabase.co"
@@ -41,6 +49,7 @@ object SupabaseManager {
         install(Auth)
         install(Postgrest)
         install(Storage)
+        install(Realtime)
 
         defaultSerializer = KotlinXSerializer(Json {
             ignoreUnknownKeys = true
@@ -175,13 +184,16 @@ object SupabaseManager {
         runOnIo {
             try {
                 val byteArray = inputStream.readBytes()
-                val fullPath = "private/$fileName"
+                android.util.Log.d("SupabaseStorage", "Uploading image: " + fileName + " Size: " + byteArray.size + " bytes")
+                val fullPath = "private/" + fileName
                 client.storage.from(POST_BUCKET_NAME).upload(fullPath, byteArray, upsert = true)
+                android.util.Log.d("SupabaseStorage", "Upload successful to " + fullPath)
                 val publicUrl = client.storage.from(POST_BUCKET_NAME).publicUrl(fullPath)
                 withContext(Dispatchers.Main) {
                     callback.onSuccess(publicUrl)
                 }
             } catch (e: Exception) {
+                android.util.Log.e("SupabaseStorage", "Upload failed", e)
                 withContext(Dispatchers.Main) {
                     callback.onError(e.message)
                 }
@@ -189,7 +201,7 @@ object SupabaseManager {
         }
     }
 
-    
+
     // SOS Operations
     private fun getUsername(): String {
         return getCurrentUserEmail()?.split("@")?.firstOrNull() ?: "anonymous"
@@ -217,7 +229,7 @@ object SupabaseManager {
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    callback.onComplete(false, "Failed to record SOS: ${e.message}")
+                    callback.onComplete(false, "Failed to record SOS: ")
                 }
             }
         }
@@ -233,7 +245,7 @@ object SupabaseManager {
         runOnIo {
             try {
                 // Get total SOS cases count
-                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()
+                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()       
                 val casesCount = sosCallsResponse.size
 
                 // Get unique user count from SOS calls
@@ -259,7 +271,7 @@ object SupabaseManager {
     fun getAllSOSCalls(callback: SOSCallsCallback) {
         runOnIo {
             try {
-                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()
+                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()       
                 withContext(Dispatchers.Main) {
                     callback.onSuccess(sosCallsResponse)
                 }
@@ -267,6 +279,34 @@ object SupabaseManager {
                 withContext(Dispatchers.Main) {
                     callback.onError(e.message)
                 }
+            }
+        }
+    }
+
+    interface NewSOSCallback {
+        fun onNewSOS(sosCall: SOSCall)
+    }
+
+    fun subscribeToSOSCalls(callback: NewSOSCallback) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                client.realtime.connect()
+                val channel = client.realtime.channel("sos-channel")
+                
+                val changeFlow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+                    table = "SOS calls"
+                }
+
+                changeFlow.onEach {
+                    val sosCall = it.decodeRecord<SOSCall>()
+                    withContext(Dispatchers.Main) {
+                        callback.onNewSOS(sosCall)
+                    }
+                }.launchIn(this)
+                
+                channel.subscribe()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
