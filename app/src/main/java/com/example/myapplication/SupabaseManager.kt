@@ -1,6 +1,5 @@
 package com.example.myapplication
 
-import android.net.Uri
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.Auth
@@ -13,17 +12,11 @@ import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
-import io.github.jan.supabase.storage.upload
-import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import io.github.jan.supabase.gotrue.providers.builtin.Email // Import the Email provider
 import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.function.Function
 import io.github.jan.supabase.serializer.KotlinXSerializer
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -206,6 +199,7 @@ object SupabaseManager {
                 val username = getUsername()
                 val time = getTime()
                 val sosCall = SOSCall(
+                    id = null,
                     time = time,
                     username = username,
                     x_coordinate = xCoordinate,
@@ -266,6 +260,25 @@ object SupabaseManager {
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     callback.onError(e.message)
+                }
+            }
+        }
+    }
+
+    fun deleteSOSCall(sosCallId: Int, callback: AuthCallback) {
+        runOnIo {
+            try {
+                client.postgrest["SOS calls"].delete {
+                    filter {
+                        eq("id", sosCallId)
+                    }
+                }
+                withContext(Dispatchers.Main) {
+                    callback.onComplete(true, "Case accepted successfully")
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    callback.onComplete(false, "Failed to accept case: ${e.message}")
                 }
             }
         }

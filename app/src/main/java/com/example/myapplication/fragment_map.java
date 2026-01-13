@@ -352,7 +352,7 @@ public class fragment_map extends Fragment {
                             marker.setTitle("SOS Call");
                             marker.setSnippet("User: " + sosCall.getUsername() + "\nTime: " + sosCall.getTime());
                             // Use IconManager to set alert icon
-                            iconManager.setAlertIcon(marker);
+                            iconManager.setAlertIcon(marker);                            
                             mapView.getOverlays().add(marker);
                             sosMarkers.add(marker);
                         }
@@ -607,7 +607,6 @@ public class fragment_map extends Fragment {
                                             Toast.LENGTH_SHORT).show();
                                 }
                             });
-
                             // Zoom to show both locations
                             controller.setZoom(14.0);
                         }
@@ -655,7 +654,7 @@ public class fragment_map extends Fragment {
                                                 Toast.LENGTH_SHORT).show();
                                     }
                                 });
-
+                                showAcceptCaseDialog(finalSosCall, finalMarker);
                                 // Zoom to show both locations
                                 controller.setZoom(14.0);
                             }
@@ -961,5 +960,113 @@ public class fragment_map extends Fragment {
             this.lat = lat;
             this.lon = lon;
         }
+    }
+
+    private void showAcceptCaseDialog(SOSCall sosCall, Marker marker) {
+        // Get user location for route calculation
+        GeoPoint userLocation = null;
+        if (myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
+            userLocation = myLocationOverlay.getMyLocation();
+        } else if (getContext() != null) {
+            LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+            if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                if (lastLocation == null) {
+                    lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
+                if (lastLocation != null) {
+                    userLocation = new GeoPoint(lastLocation.getLatitude(), lastLocation.getLongitude());
+                }
+            }
+        }
+
+        GeoPoint sosLocation = new GeoPoint(sosCall.getX_coordinate(), sosCall.getY_coordinate());
+        double distance = 0;
+        if (userLocation != null) {
+            distance = calculateDistance(userLocation, sosLocation) / 1000.0; // Convert to km
+        }
+
+        String message = String.format(
+            "SOS Call Details:\n\n" +
+            "User: %s\n" +
+            "Time: %s\n" +
+            "Distance: %.2f km\n\n" +
+            "Do you want to accept this case?",
+            sosCall.getUsername(),
+            sosCall.getTime(),
+            distance
+        );
+
+        final GeoPoint finalUserLocation = userLocation;
+        
+        new android.app.AlertDialog.Builder(getContext())
+            .setTitle("Accept SOS Case")
+            .setMessage(message)
+            .setPositiveButton("Accept Case", (dialog, which) -> {
+                acceptSOSCase(sosCall, marker);
+            })
+            .setNegativeButton("Cancel", null)
+            .setNeutralButton("Show Route", (dialog, which) -> {
+                if (finalUserLocation != null) {
+                    showRouteToSOS(finalUserLocation, sosLocation);
+                } else {
+                    Toast.makeText(getContext(), "Unable to get your location", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .show();
+    }
+
+    private void acceptSOSCase(SOSCall sosCall, Marker marker) {
+        if (sosCall.getId() == null) {
+            Toast.makeText(getContext(), "Cannot accept case: Invalid SOS ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        SupabaseManager.INSTANCE.deleteSOSCall(sosCall.getId(), new SupabaseManager.AuthCallback() {
+            @Override
+            public void onComplete(boolean success, String message) {
+                if (getActivity() != null && isAdded()) {
+                    getActivity().runOnUiThread(() -> {
+                        if (success) {
+                            Toast.makeText(getContext(), "SOS case accepted and removed", Toast.LENGTH_LONG).show();
+                            // Remove marker from map
+                            mapView.getOverlays().remove(marker);
+                            sosMarkers.remove(marker);
+                            mapView.invalidate();
+                            // Reload data
+                            loadAndPlotSOSCalls();
+                            loadStatistics();
+                        } else {
+                            Toast.makeText(getContext(), "Failed to accept case: " + message, Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void showRouteToSOS(GeoPoint userLocation, GeoPoint sosLocation) {
+        // Center map to show both points
+        double centerLat = (userLocation.getLatitude() + sosLocation.getLatitude()) / 2;
+        double centerLon = (userLocation.getLongitude() + sosLocation.getLongitude()) / 2;
+        GeoPoint center = new GeoPoint(centerLat, centerLon);
+        
+        controller.animateTo(center);
+        
+        // Calculate appropriate zoom level
+        double latDiff = Math.abs(userLocation.getLatitude() - sosLocation.getLatitude());
+        double lonDiff = Math.abs(userLocation.getLongitude() - sosLocation.getLongitude());
+        double maxDiff = Math.max(latDiff, lonDiff);
+        
+        int zoom = 15;
+        if (maxDiff > 0.1) zoom = 11;
+        else if (maxDiff > 0.05) zoom = 12;
+        else if (maxDiff > 0.02) zoom = 13;
+        else if (maxDiff > 0.01) zoom = 14;
+        
+        controller.setZoom((double) zoom);
+        
+        Toast.makeText(getContext(), "Showing route to SOS location", Toast.LENGTH_SHORT).show();
     }
 }
