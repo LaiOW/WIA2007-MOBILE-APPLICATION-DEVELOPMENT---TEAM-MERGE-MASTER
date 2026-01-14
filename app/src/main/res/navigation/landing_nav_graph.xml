@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/landing_nav_graph"
+    app:startDestination="@id/landing_host">
+
+    <fragment
+        android:id="@+id/landing_host"
+        android:name="com.example.myapplication.LandingHostFragment"
+        android:label="fragment_landing_host"
+        tools:layout="@layout/fragment_landing_host" />
+
+    <fragment
+        android:id="@+id/landing1"
+        android:name="com.example.myapplication.landing1"
+        android:label="fragment_landing1"
+        tools:layout="@layout/fragment_landing1" >
+        <action
+            android:id="@+id/action_landing1_to_landing2"
+            app:destination="@id/landing2" />
+    </fragment>
+    <fragment
+        android:id="@+id/landing2"
+        android:name="com.example.myapplication.landing2"
+        android:label="fragment_landing2"
+        tools:layout="@layout/fragment_landing2" />
+</navigation>

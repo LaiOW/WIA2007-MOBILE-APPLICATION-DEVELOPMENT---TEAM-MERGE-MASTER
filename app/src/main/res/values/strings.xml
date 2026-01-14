@@ -1,3 +1,30 @@
 <resources>
     <string name="app_name">My Application</string>
+    <string name="login">Login</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="register">Register</string>
+    <string name="click_to_login">Click to Login</string>
+    <string name="click_to_register">Click to register</string>
+    <string name="logout">Logout</string>
+    <string name="register_title">Create your account</string>
+    <string name="login_now">Already have an account? Login</string>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+
+    <string name="search_hint">Search</string>
+    <string name="cases_count_placeholder">35</string>
+    <string name="cases_label">Cases</string>
+    <string name="day_placeholder">4</string>
+    <string name="month_year_placeholder">Nov 2025</string>
+    <string name="user_count_placeholder">23</string>
+    <string name="user_label">User</string>
+    <string name="user_name_placeholder">USER NAME</string>
+    <string name="user_address_placeholder">USER current Address</string>
+    <string name="call_label">CALL</string>
+    <string name="favorites_desc">Favorites</string>
+    <string name="search_icon_desc">Search Icon</string>
+    <string name="location_icon_desc">Location Icon</string>
+    <string name="alert_icon_desc">Alert Icon</string>
 </resources>

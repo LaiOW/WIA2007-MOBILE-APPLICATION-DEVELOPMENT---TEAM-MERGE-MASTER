@@ -1,0 +1,5 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#6200EE"/> <!-- Same purple as your text color -->
+    <corners android:radius="16dp"/> <!-- Rounded corners -->
+</shape>
