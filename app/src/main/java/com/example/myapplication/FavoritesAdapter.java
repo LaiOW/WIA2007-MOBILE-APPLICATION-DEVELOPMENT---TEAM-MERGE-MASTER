@@ -45,7 +45,7 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
 
         holder.btnDelete.setOnClickListener(v -> {
             favoritesList.remove(position);
-            FavoritesManager.getInstance().removeFavorite(location);
+            FavoritesManager.getInstance(v.getContext()).removeFavorite(location);
             notifyItemRemoved(position);
             notifyItemRangeChanged(position, favoritesList.size());
         });

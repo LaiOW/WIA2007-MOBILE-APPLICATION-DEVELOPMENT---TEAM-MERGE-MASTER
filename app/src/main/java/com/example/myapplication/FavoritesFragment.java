@@ -5,6 +5,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,6 +20,8 @@ public class FavoritesFragment extends Fragment {
     private RecyclerView recyclerView;
     private FavoritesAdapter adapter;
     private OnFavoriteSelectedListener callback;
+    private EditText etNewFavorite;
+    private Button btnAddFavorite;
 
     public interface OnFavoriteSelectedListener {
         void onFavoriteSelected(String address);
@@ -28,8 +33,7 @@ public class FavoritesFragment extends Fragment {
         if (context instanceof OnFavoriteSelectedListener) {
             callback = (OnFavoriteSelectedListener) context;
         } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFavoriteSelectedListener");
+            // It's okay if not implemented, just won't do anything on click
         }
     }
 
@@ -39,21 +43,40 @@ public class FavoritesFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_favorites, container, false);
 
         recyclerView = view.findViewById(R.id.recyclerViewFavorites);
+        etNewFavorite = view.findViewById(R.id.etNewFavorite); // Need to add these to XML
+        btnAddFavorite = view.findViewById(R.id.btnAddFavorite); // Need to add these to XML
+
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        adapter = new FavoritesAdapter(FavoritesManager.getInstance().getFavorites(), location -> {
+        updateList();
+
+        if (btnAddFavorite != null && etNewFavorite != null) {
+            btnAddFavorite.setOnClickListener(v -> {
+                String location = etNewFavorite.getText().toString().trim();
+                if (!location.isEmpty()) {
+                    FavoritesManager.getInstance(getContext()).addFavorite(location);
+                    updateList();
+                    etNewFavorite.setText("");
+                } else {
+                    Toast.makeText(getContext(), "Please enter a location", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        return view;
+    }
+
+    private void updateList() {
+        adapter = new FavoritesAdapter(FavoritesManager.getInstance(getContext()).getFavorites(), location -> {       
             if (callback != null) {
                 callback.onFavoriteSelected(location);
             }
             // Close fragment
             getParentFragmentManager().popBackStack();
         });
-        
         recyclerView.setAdapter(adapter);
-
-        return view;
     }
-    
+
     @Override
     public void onResume() {
         super.onResume();

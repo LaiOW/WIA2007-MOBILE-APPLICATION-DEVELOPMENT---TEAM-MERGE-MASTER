@@ -1,6 +1,8 @@
 package com.example.myapplication;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -14,6 +16,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.UUID;
 
 public class CreatePostActivity extends AppCompatActivity {
 
@@ -64,7 +67,7 @@ public class CreatePostActivity extends AppCompatActivity {
 
                 if (selectedImageUri != null) {
                     try {
-                        InputStream inputStream = getContentResolver().openInputStream(selectedImageUri);
+                        InputStream inputStream = getContentResolver().openInputStream(selectedImageUri); 
                         uploadImageAndSavePost(userName, postTitle, postContent, inputStream);
                     } catch (FileNotFoundException e) {
                         Toast.makeText(this, "Image not found", Toast.LENGTH_SHORT).show();
@@ -82,7 +85,8 @@ public class CreatePostActivity extends AppCompatActivity {
     }
 
     private void uploadImageAndSavePost(String userName, String title, String content, InputStream inputStream) {
-        String fileName = System.currentTimeMillis() + ".jpg";
+        // Use UUID for unique filename to prevent collisions and caching issues
+        String fileName = UUID.randomUUID().toString() + ".jpg";
         SupabaseManager.INSTANCE.uploadImage(inputStream, fileName, new SupabaseManager.StorageCallback() {
             @Override
             public void onSuccess(String imageUrl) {
@@ -98,16 +102,23 @@ public class CreatePostActivity extends AppCompatActivity {
         });
     }
 
-    private void savePostToDatabase(String userName, String title, String content, String imageUrl) {
+    private void savePostToDatabase(String userName, String title, String content, String imageUrl) {     
         Post post = new Post(userName, title, content, "General");
         if (imageUrl != null) {
             post.setImageUri(imageUrl);
         }
 
+        // Get user profile image from SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String userProfileImage = sharedPreferences.getString("profile_image_uri", null);
+        if (userProfileImage != null) {
+            post.setUserProfileImage(userProfileImage);
+        }
+
         SupabaseManager.INSTANCE.savePost(post, new SupabaseManager.DatabaseCallback<Post>() {
             @Override
             public void onSuccess(List<Post> data) {
-                Toast.makeText(CreatePostActivity.this, "Post Published!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(CreatePostActivity.this, "Post Published!", Toast.LENGTH_SHORT).show();    
                 setResult(RESULT_OK);
                 finish();
             }

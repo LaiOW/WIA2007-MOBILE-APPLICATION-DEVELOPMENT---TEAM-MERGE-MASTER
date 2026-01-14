@@ -101,18 +101,5 @@
             app:layout_constraintStart_toEndOf="@id/ic_heart"
             app:layout_constraintTop_toTopOf="@id/ic_heart" />
 
-        <Button
-            android:id="@+id/btn_on_my_way"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="#FF1100"
-            android:text="On My Way"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            app:cornerRadius="8dp"
-            app:layout_constraintBottom_toBottomOf="@id/ic_heart"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/ic_heart" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>
