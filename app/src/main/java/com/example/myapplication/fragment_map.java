@@ -82,6 +82,12 @@ public class fragment_map extends Fragment {
     private Marker searchMarker;
     private List<Marker> sosMarkers = new ArrayList<>();
     private List<SOSCall> allSOSCalls = new ArrayList<>();
+    private com.google.android.material.button.MaterialButton btnAcceptCase;
+    private SOSCall selectedSOSCall;
+    private Marker selectedMarker;
+    private long lastClickTime = 0;
+    private Marker lastClickedMarker = null;
+    private List<Marker> acceptedMarkers = new ArrayList<>();
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -111,9 +117,13 @@ public class fragment_map extends Fragment {
         searchEditText = view.findViewById(R.id.ETsearch);
         suggestionsList = view.findViewById(R.id.suggestionsList);
         fabReturnToLocation = view.findViewById(R.id.fabReturnToLocation);
+        btnAcceptCase = view.findViewById(R.id.btnAcceptCase);
 
         // Setup return to location button
         setupReturnToLocationButton();
+        
+        // Setup accept case button
+        setupAcceptCaseButton();
 
         // Auto-select all text when clicking search bar
         searchEditText.setSelectAllOnFocus(true);
@@ -172,6 +182,35 @@ public class fragment_map extends Fragment {
                 } catch (Exception e) {
                     // Ignore errors
                 }
+                
+                // Reset double-click tracking
+                lastClickTime = 0;
+                lastClickedMarker = null;
+                
+                // Hide accept case button when clicking elsewhere
+                if (btnAcceptCase != null && btnAcceptCase.getVisibility() == View.VISIBLE) {
+                    btnAcceptCase.setVisibility(View.GONE);
+                    selectedSOSCall = null;
+                    selectedMarker = null;
+                }
+                
+                // Remove accepted markers when clicking elsewhere
+                if (!acceptedMarkers.isEmpty()) {
+                    // Clear route
+                    if (routeManager != null) {
+                        routeManager.clearRoute();
+                    }
+                    
+                    for (Marker acceptedMarker : acceptedMarkers) {
+                        mapView.getOverlays().remove(acceptedMarker);
+                        sosMarkers.remove(acceptedMarker);
+                    }
+                    acceptedMarkers.clear();
+                    mapView.invalidate();
+                    // Reload all SOS calls to sync with database
+                    loadAndPlotSOSCalls();
+                }
+                
                 return false; // Return false to allow other overlays to handle the event
             }
 
@@ -615,12 +654,22 @@ public class fragment_map extends Fragment {
                     // Set the custom info window on the marker
                     marker.setInfoWindow(infoWindow);
 
-                    // Click listener - first click shows bubble, second click triggers route
+                    // Click listener - double click shows accept case button
                     marker.setOnMarkerClickListener((clickedMarker, mapView) -> {
-                        // If info window is already showing, trigger route calculation
-                        if (clickedMarker.isInfoWindowShown()) {
-                            Toast.makeText(getContext(), "Calculating route to " + finalSosCall.getUsername() + "...", Toast.LENGTH_SHORT).show();
-
+                        long currentTime = System.currentTimeMillis();
+                        
+                        // Check if this is a double click (within 500ms on same marker)
+                        if (lastClickedMarker == clickedMarker && (currentTime - lastClickTime) < 500) {
+                            // Double click detected - show accept case button
+                            selectedSOSCall = finalSosCall;
+                            selectedMarker = finalMarker;
+                            
+                            // Show the accept case button
+                            if (btnAcceptCase != null) {
+                                btnAcceptCase.setText("Accept Case: " + finalSosCall.getUsername());
+                                btnAcceptCase.setVisibility(View.VISIBLE);
+                            }
+                            
                             // Calculate and draw route
                             if (routeManager != null && myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
                                 GeoPoint currentLocation = myLocationOverlay.getMyLocation();
@@ -628,6 +677,8 @@ public class fragment_map extends Fragment {
 
                                 // Disable follow location
                                 myLocationOverlay.disableFollowLocation();
+
+                                Toast.makeText(getContext(), "Calculating route to " + finalSosCall.getUsername() + "...", Toast.LENGTH_SHORT).show();
 
                                 routeManager.drawRoute(currentLocation, destination, new RouteManager.RouteCallback() {
                                     @Override
@@ -654,14 +705,22 @@ public class fragment_map extends Fragment {
                                                 Toast.LENGTH_SHORT).show();
                                     }
                                 });
-                                showAcceptCaseDialog(finalSosCall, finalMarker);
                                 // Zoom to show both locations
                                 controller.setZoom(14.0);
                             }
+                            
+                            // Close the info window
+                            clickedMarker.closeInfoWindow();
+                            
+                            // Reset click tracking
+                            lastClickTime = 0;
+                            lastClickedMarker = null;
                             return true; // Event consumed
                         } else {
-                            // First click - show info window
+                            // First click - show info window and track for double click
                             clickedMarker.showInfoWindow();
+                            lastClickTime = currentTime;
+                            lastClickedMarker = clickedMarker;
                             return true; // Event consumed
                         }
                     });
@@ -855,7 +914,27 @@ public class fragment_map extends Fragment {
                 }
                 // Hide the button after returning to location
                 fabReturnToLocation.setVisibility(View.GONE);
+                
+                // Also hide accept case button
+                if (btnAcceptCase != null) {
+                    btnAcceptCase.setVisibility(View.GONE);
+                }
+                
                 Toast.makeText(getContext(), "Returned to your location", Toast.LENGTH_SHORT).show();
+            });
+        }
+    }
+    
+    private void setupAcceptCaseButton() {
+        if (btnAcceptCase != null) {
+            btnAcceptCase.setOnClickListener(v -> {
+                if (selectedSOSCall != null && selectedMarker != null) {
+                    acceptSOSCase(selectedSOSCall, selectedMarker);
+                    // Hide the button after accepting
+                    btnAcceptCase.setVisibility(View.GONE);
+                    selectedSOSCall = null;
+                    selectedMarker = null;
+                }
             });
         }
     }
@@ -1029,13 +1108,10 @@ public class fragment_map extends Fragment {
                 if (getActivity() != null && isAdded()) {
                     getActivity().runOnUiThread(() -> {
                         if (success) {
-                            Toast.makeText(getContext(), "SOS case accepted and removed", Toast.LENGTH_LONG).show();
-                            // Remove marker from map
-                            mapView.getOverlays().remove(marker);
-                            sosMarkers.remove(marker);
-                            mapView.invalidate();
-                            // Reload data
-                            loadAndPlotSOSCalls();
+                            Toast.makeText(getContext(), "SOS case accepted. Tap map to clear.", Toast.LENGTH_LONG).show();
+                            // Don't remove marker immediately - add to accepted list
+                            acceptedMarkers.add(marker);
+                            // Reload statistics only
                             loadStatistics();
                         } else {
                             Toast.makeText(getContext(), "Failed to accept case: " + message, Toast.LENGTH_LONG).show();
