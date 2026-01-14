@@ -35,6 +35,7 @@
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
         android:layout_marginBottom="16dp"
+        android:hint="@string/email"
         app:boxBackgroundColor="#F7F7F8"
         app:boxStrokeWidth="0dp"
         app:boxStrokeWidthFocused="0dp"
@@ -42,6 +43,8 @@
         app:boxCornerRadiusTopEnd="8dp"
         app:boxCornerRadiusBottomStart="8dp"
         app:boxCornerRadiusBottomEnd="8dp"
+        app:startIconDrawable="@drawable/ic_baseline_mail_outline_24"
+        app:startIconTint="@color/gray"
         app:layout_constraintBottom_toTopOf="@+id/textInputLayoutPassword"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -53,11 +56,10 @@
             android:layout_height="wrap_content"
             android:paddingTop="16dp"
             android:paddingBottom="16dp"
-            android:hint="@string/email"
+            android:paddingStart="48dp"
             android:inputType="textEmailAddress"
             android:textSize="15sp"
-            android:textColor="#000000"
-            android:textColorHint="#8391A1" />
+            android:textColor="#000000" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
@@ -68,6 +70,7 @@
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
         android:layout_marginBottom="32dp"
+        android:hint="@string/password"
         app:boxBackgroundColor="#F7F7F8"
         app:boxStrokeWidth="0dp"
         app:boxStrokeWidthFocused="0dp"
@@ -75,8 +78,10 @@
         app:boxCornerRadiusTopEnd="8dp"
         app:boxCornerRadiusBottomStart="8dp"
         app:boxCornerRadiusBottomEnd="8dp"
+        app:startIconDrawable="@drawable/ic_baseline_lock_outline_24"
+        app:startIconTint="@color/gray"
         app:endIconMode="password_toggle"
-        app:endIconTint="#6A707C"
+        app:endIconTint="@color/sea_blue"
         app:layout_constraintBottom_toTopOf="@+id/btn_register"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -88,11 +93,10 @@
             android:layout_height="wrap_content"
             android:paddingTop="16dp"
             android:paddingBottom="16dp"
-            android:hint="@string/password"
+            android:paddingStart="48dp"
             android:inputType="textPassword"
             android:textSize="15sp"
-            android:textColor="#000000"
-            android:textColorHint="#8391A1" />
+            android:textColor="#000000" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <Button
@@ -133,7 +137,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/btn_register"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
