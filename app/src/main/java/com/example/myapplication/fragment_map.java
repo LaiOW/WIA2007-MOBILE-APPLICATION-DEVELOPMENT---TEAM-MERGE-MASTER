@@ -530,6 +530,27 @@ public class fragment_map extends Fragment {
                 myLocationOverlay.disableFollowLocation();
             }
 
+            // Find the corresponding marker for this SOS call
+            Marker correspondingMarker = null;
+            for (Marker marker : sosMarkers) {
+                GeoPoint markerPos = marker.getPosition();
+                if (Math.abs(markerPos.getLatitude() - sosCall.getX_coordinate()) < 0.0001 &&
+                    Math.abs(markerPos.getLongitude() - sosCall.getY_coordinate()) < 0.0001) {
+                    correspondingMarker = marker;
+                    break;
+                }
+            }
+
+            // Store selected SOS call and marker for accept button
+            selectedSOSCall = sosCall;
+            selectedMarker = correspondingMarker;
+
+            // Show the accept case button
+            if (btnAcceptCase != null) {
+                btnAcceptCase.setText("Accept Case: " + sosCall.getUsername());
+                btnAcceptCase.setVisibility(View.VISIBLE);
+            }
+
             // Calculate and draw route
             if (routeManager != null && myLocationOverlay.getMyLocation() != null) {
                 GeoPoint currentLocation = myLocationOverlay.getMyLocation();
@@ -544,6 +565,11 @@ public class fragment_map extends Fragment {
                                         "Route: %.1f km, ~%.0f min",
                                         distanceKm, durationMinutes),
                                 Toast.LENGTH_LONG).show();
+                                
+                        // Show return to location button
+                        if (fabReturnToLocation != null) {
+                            fabReturnToLocation.setVisibility(View.VISIBLE);
+                        }
                     }
 
                     @Override
