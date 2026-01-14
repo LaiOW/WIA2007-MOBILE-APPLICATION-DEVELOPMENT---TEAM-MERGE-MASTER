@@ -116,8 +116,9 @@ public class fragment_map extends Fragment {
         View cardProfile = view.findViewById(R.id.cardProfile);
         searchEditText = view.findViewById(R.id.ETsearch);
         suggestionsList = view.findViewById(R.id.suggestionsList);
-                fabReturnToLocation = view.findViewById(R.id.fabReturnToLocation);
+        fabReturnToLocation = view.findViewById(R.id.fabReturnToLocation);
         fabFavorites = view.findViewById(R.id.fabFavorites);
+        btnAcceptCase = view.findViewById(R.id.btnAcceptCase);
 
         // Setup Favorites FAB
         if (fabFavorites != null) {
@@ -962,7 +963,19 @@ public class fragment_map extends Fragment {
             });
         }
     }
-
+    private void setupAcceptCaseButton() {
+        if (btnAcceptCase != null) {
+            btnAcceptCase.setOnClickListener(v -> {
+                if (selectedSOSCall != null && selectedMarker != null) {
+                    acceptSOSCase(selectedSOSCall, selectedMarker);
+                    // Hide the button after accepting
+                    btnAcceptCase.setVisibility(View.GONE);
+                    selectedSOSCall = null;
+                    selectedMarker = null;
+                }
+            });
+        }
+    }
     public void searchLocation(String query) {
         executor.execute(() -> {
             try {
@@ -1063,61 +1076,6 @@ public class fragment_map extends Fragment {
             this.lat = lat;
             this.lon = lon;
         }
-    }
-
-    private void showAcceptCaseDialog(SOSCall sosCall, Marker marker) {
-        // Get user location for route calculation
-        GeoPoint userLocation = null;
-        if (myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
-            userLocation = myLocationOverlay.getMyLocation();
-        } else if (getContext() != null) {
-            LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
-            if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                if (lastLocation == null) {
-                    lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                }
-                if (lastLocation != null) {
-                    userLocation = new GeoPoint(lastLocation.getLatitude(), lastLocation.getLongitude());
-                }
-            }
-        }
-
-        GeoPoint sosLocation = new GeoPoint(sosCall.getX_coordinate(), sosCall.getY_coordinate());
-        double distance = 0;
-        if (userLocation != null) {
-            distance = calculateDistance(userLocation, sosLocation) / 1000.0; // Convert to km
-        }
-
-        String message = String.format(
-            "SOS Call Details:\n\n" +
-            "User: %s\n" +
-            "Time: %s\n" +
-            "Distance: %.2f km\n\n" +
-            "Do you want to accept this case?",
-            sosCall.getUsername(),
-            sosCall.getTime(),
-            distance
-        );
-
-        final GeoPoint finalUserLocation = userLocation;
-        
-        new android.app.AlertDialog.Builder(getContext())
-            .setTitle("Accept SOS Case")
-            .setMessage(message)
-            .setPositiveButton("Accept Case", (dialog, which) -> {
-                acceptSOSCase(sosCall, marker);
-            })
-            .setNegativeButton("Cancel", null)
-            .setNeutralButton("Show Route", (dialog, which) -> {
-                if (finalUserLocation != null) {
-                    showRouteToSOS(finalUserLocation, sosLocation);
-                } else {
-                    Toast.makeText(getContext(), "Unable to get your location", Toast.LENGTH_SHORT).show();
-                }
-            })
-            .show();
     }
 
     private void acceptSOSCase(SOSCall sosCall, Marker marker) {

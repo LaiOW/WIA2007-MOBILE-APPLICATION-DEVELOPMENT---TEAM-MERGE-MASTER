@@ -145,7 +145,7 @@ object SupabaseManager {
     fun isLoggedIn(): Boolean {
         // More robust check for session status
         val status = client.auth.sessionStatus.value
-        return status is SessionStatus.Authenticated || client.auth.currentSessionOrNull() != null        
+        return status is SessionStatus.Authenticated || client.auth.currentSessionOrNull() != null
     }
 
     // Database Operations
@@ -245,7 +245,7 @@ object SupabaseManager {
         runOnIo {
             try {
                 // Get total SOS cases count
-                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()       
+                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()
                 val casesCount = sosCallsResponse.size
 
                 // Get unique user count from SOS calls
@@ -271,7 +271,7 @@ object SupabaseManager {
     fun getAllSOSCalls(callback: SOSCallsCallback) {
         runOnIo {
             try {
-                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()       
+                val sosCallsResponse = client.postgrest["SOS calls"].select().decodeList<SOSCall>()
                 withContext(Dispatchers.Main) {
                     callback.onSuccess(sosCallsResponse)
                 }
@@ -292,7 +292,7 @@ object SupabaseManager {
             try {
                 client.realtime.connect()
                 val channel = client.realtime.channel("sos-channel")
-                
+
                 val changeFlow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
                     table = "SOS calls"
                 }
@@ -303,10 +303,28 @@ object SupabaseManager {
                         callback.onNewSOS(sosCall)
                     }
                 }.launchIn(this)
-                
+
                 channel.subscribe()
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+    fun deleteSOSCall(sosCallId: Int, callback: AuthCallback) {
+        runOnIo {
+            try {
+                client.postgrest["SOS calls"].delete {
+                    filter {
+                        eq("id", sosCallId)
+                    }
+                }
+                withContext(Dispatchers.Main) {
+                    callback.onComplete(true, "Case accepted successfully")
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    callback.onComplete(false, "Failed to accept case: ${e.message}")
+                }
             }
         }
     }
