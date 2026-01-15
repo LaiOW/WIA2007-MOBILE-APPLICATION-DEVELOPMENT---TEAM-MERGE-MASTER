@@ -56,11 +56,11 @@ public class SOSNotificationService extends Service {
 
     private void requestLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG, "Location permissions missing");
             return;
         }
-        
+
         try {
             // Request updates from both providers to increase chance of getting a location
             if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -100,7 +100,7 @@ public class SOSNotificationService extends Service {
         if (userLocation == null) {
             Log.e(TAG, "User location is null, cannot check distance");
             // Fallback: Notify anyway if location is unknown? For safety, maybe yes.
-            // showSOSAlert(sosCall, -1); 
+            // showSOSAlert(sosCall, -1);
             return;
         }
 
@@ -123,7 +123,7 @@ public class SOSNotificationService extends Service {
 
     private Location getLastKnownLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return null;
         }
 
@@ -182,7 +182,7 @@ public class SOSNotificationService extends Service {
             );
             channel.setDescription("Alerts for nearby SOS calls");
             channel.enableVibration(true);
-            
+
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);

@@ -11,7 +11,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="My Favorites"
+        android:text="@string/my_favorites"
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp"
@@ -28,7 +28,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Enter address or location"
+            android:hint="@string/enter_address_or_location"
             android:inputType="textPostalAddress"
             android:background="@android:drawable/edit_text"
             android:padding="12dp"/>
@@ -37,7 +37,7 @@
             android:id="@+id/btnAddFavorite"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Add"
+            android:text="@string/add"
             android:backgroundTint="#FF1100"
             android:textColor="#FFFFFF"
             android:layout_marginStart="8dp"/>
