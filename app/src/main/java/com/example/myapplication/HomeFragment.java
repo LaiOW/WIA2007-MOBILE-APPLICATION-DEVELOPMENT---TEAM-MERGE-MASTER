@@ -19,6 +19,8 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.imageview.ShapeableImageView;
+import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,31 +29,32 @@ public class HomeFragment extends Fragment {
     private FeedAdapter adapter;
     private List<Post> postList;
     private ActivityResultLauncher<Intent> createPostLauncher;
-    private TextView tvUsernameTop;
+    private ShapeableImageView ivProfilePicHome;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         createPostLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                // Refresh posts when returning from creating a post
-                fetchPosts();
-            });
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // Refresh posts when returning from creating a post
+                    fetchPosts();
+                });
     }
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         try {
-            tvUsernameTop = view.findViewById(R.id.tvUsernameTop);
+            ivProfilePicHome = view.findViewById(R.id.ivProfilePicHome);
 
-            if (tvUsernameTop != null) {
-                updateUsernameDisplay();
+            if (ivProfilePicHome != null) {
+                updateProfilePicDisplay();
 
-                tvUsernameTop.setOnClickListener(v -> {
+                ivProfilePicHome.setOnClickListener(v -> {
                     Intent intent = new Intent(getActivity(), ProfileActivity.class);
                     startActivity(intent);
                 });
@@ -84,25 +87,26 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         // Refresh username when returning from ProfileActivity
-        if (tvUsernameTop != null) {
-            updateUsernameDisplay();
+        if (ivProfilePicHome != null) {
+            updateProfilePicDisplay();
         }
     }
 
-    private void updateUsernameDisplay() {
-        if (getContext() == null) return;
+    private void updateProfilePicDisplay() {
+        if (getContext() == null || ivProfilePicHome == null)
+            return;
 
-        String currentUserEmail = SupabaseManager.INSTANCE.getCurrentUserEmail();
-        if (currentUserEmail != null) {
-            SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-            String savedName = sharedPreferences.getString("display_name", null);
+        SharedPreferences sharedPreferences = getContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String imageUriString = sharedPreferences.getString("profile_image_uri", null);
 
-            if (savedName != null) {
-                tvUsernameTop.setText(savedName);
-            } else {
-                String name = currentUserEmail.split("@")[0];
-                tvUsernameTop.setText(name);
-            }
+        if (imageUriString != null && !imageUriString.isEmpty()) {
+            Picasso.get()
+                    .load(imageUriString)
+                    .placeholder(R.drawable.default_avatar)
+                    .error(R.drawable.default_avatar)
+                    .into(ivProfilePicHome);
+        } else {
+            ivProfilePicHome.setImageResource(R.drawable.default_avatar);
         }
     }
 
