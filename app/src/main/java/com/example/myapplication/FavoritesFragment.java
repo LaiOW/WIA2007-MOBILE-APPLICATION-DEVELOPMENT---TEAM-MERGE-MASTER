@@ -57,7 +57,16 @@ public class FavoritesFragment extends Fragment {
                     FavoritesManager.getInstance(getContext()).addFavorite(location);
                     updateList();
                     etNewFavorite.setText("");
-                } else {
+
+                }
+
+                android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager)
+                        getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(etNewFavorite.getWindowToken(), 0);
+                }
+
+                else {
                     Toast.makeText(getContext(), "Please enter a location", Toast.LENGTH_SHORT).show();
                 }
             });
