@@ -102,7 +102,7 @@ public class fragment_map extends Fragment {
         mapView = view.findViewById(R.id.mapView);
         mapView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         mapView.setMultiTouchControls(true);
-        
+
         // Disable built-in zoom controls
         mapView.getZoomController().setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER);
 
@@ -123,24 +123,24 @@ public class fragment_map extends Fragment {
         // Setup Favorites FAB
         if (fabFavorites != null) {
             fabFavorites.setOnClickListener(v -> {
-                 if (getActivity() != null) {
-                     getActivity().getSupportFragmentManager().beginTransaction()
-                         .replace(R.id.main, new FavoritesFragment())
-                         .addToBackStack(null)
-                         .commit();
-                 }
+                if (getActivity() != null) {
+                    getActivity().getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.main, new FavoritesFragment())
+                            .addToBackStack(null)
+                            .commit();
+                }
             });
         }
 
         // Setup return to location button
         setupReturnToLocationButton();
-        
+
         // Setup accept case button
         setupAcceptCaseButton();
 
         // Auto-select all text when clicking search bar
         searchEditText.setSelectAllOnFocus(true);
-        
+
         updateUsernameDisplay();
         updateDateDisplay();
         loadStatistics();
@@ -156,17 +156,17 @@ public class fragment_map extends Fragment {
         // SOS Button Listener
         view.findViewById(R.id.BTSOScall).setOnClickListener(v -> {
             // Check for location permissions first
-            if (getContext() != null && 
-                (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                 ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
+            if (getContext() != null &&
+                    (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                            ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
                 // Request permissions
                 requestPermissions(new String[]{
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
                 }, LOCATION_PERMISSION_REQUEST_CODE);
                 return;
             }
-            
+
             recordSOSLocation();
         });
 
@@ -195,25 +195,25 @@ public class fragment_map extends Fragment {
                 } catch (Exception e) {
                     // Ignore errors
                 }
-                
+
                 // Reset double-click tracking
                 lastClickTime = 0;
                 lastClickedMarker = null;
-                
+
                 // Hide accept case button when clicking elsewhere
                 if (btnAcceptCase != null && btnAcceptCase.getVisibility() == View.VISIBLE) {
                     btnAcceptCase.setVisibility(View.GONE);
                     selectedSOSCall = null;
                     selectedMarker = null;
                 }
-                
+
                 // Remove accepted markers when clicking elsewhere
                 if (!acceptedMarkers.isEmpty()) {
                     // Clear route
                     if (routeManager != null) {
                         routeManager.clearRoute();
                     }
-                    
+
                     for (Marker acceptedMarker : acceptedMarkers) {
                         mapView.getOverlays().remove(acceptedMarker);
                         sosMarkers.remove(acceptedMarker);
@@ -223,7 +223,7 @@ public class fragment_map extends Fragment {
                     // Reload all SOS calls to sync with database
                     loadAndPlotSOSCalls();
                 }
-                
+
                 return false; // Return false to allow other overlays to handle the event
             }
 
@@ -234,7 +234,7 @@ public class fragment_map extends Fragment {
         };
 
         org.osmdroid.views.overlay.MapEventsOverlay mapEventsOverlay =
-            new org.osmdroid.views.overlay.MapEventsOverlay(mapEventsReceiver);
+                new org.osmdroid.views.overlay.MapEventsOverlay(mapEventsReceiver);
         mapView.getOverlays().add(0, mapEventsOverlay); // Add at index 0 so it's processed last
 
         controller = mapView.getController();
@@ -303,8 +303,8 @@ public class fragment_map extends Fragment {
                     // Focus and select search bar text for new search
                     searchEditText.requestFocus();
                     searchEditText.selectAll();
-                    InputMethodManager imm = (InputMethodManager) 
-                        getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    InputMethodManager imm = (InputMethodManager)
+                            getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.showSoftInput(searchEditText, InputMethodManager.SHOW_IMPLICIT);
                 }
             }
@@ -330,10 +330,10 @@ public class fragment_map extends Fragment {
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dayFormat = new SimpleDateFormat("dd", Locale.getDefault());
         SimpleDateFormat monthYearFormat = new SimpleDateFormat("MMM\nyyyy", Locale.getDefault());
-        
+
         String day = dayFormat.format(calendar.getTime());
         String monthYear = monthYearFormat.format(calendar.getTime());
-        
+
         tvDateDay.setText(day);
         tvDateMonthYear.setText(monthYear);
     }
@@ -342,9 +342,9 @@ public class fragment_map extends Fragment {
         if (mapView != null && tvMapCoordinates != null) {
             GeoPoint center = (GeoPoint) mapView.getMapCenter();
             String coordText = String.format(Locale.getDefault(),
-                "Lat: %.6f, Lon: %.6f",
-                center.getLatitude(),
-                center.getLongitude());
+                    "Lat: %.6f, Lon: %.6f",
+                    center.getLatitude(),
+                    center.getLongitude());
             tvMapCoordinates.setText(coordText);
         }
     }
@@ -372,7 +372,7 @@ public class fragment_map extends Fragment {
                         tvCasesCount.setText("");
                         tvUserCount.setText("");
                         Toast.makeText(getContext(), "Failed to load statistics: " + message,
-                            Toast.LENGTH_SHORT).show();
+                                Toast.LENGTH_SHORT).show();
                     });
                 }
             }
@@ -387,7 +387,7 @@ public class fragment_map extends Fragment {
                         // Store all SOS calls for distance calculations
                         allSOSCalls.clear();
                         allSOSCalls.addAll(sosCalls);
-                        
+
                         // Clear existing SOS markers
                         for (Marker marker : sosMarkers) {
                             mapView.getOverlays().remove(marker);
@@ -404,7 +404,7 @@ public class fragment_map extends Fragment {
                             marker.setTitle("SOS Call");
                             marker.setSnippet("User: " + sosCall.getUsername() + "\nTime: " + sosCall.getTime());
                             // Use IconManager to set alert icon
-                            iconManager.setAlertIcon(marker);                            
+                            iconManager.setAlertIcon(marker);
                             mapView.getOverlays().add(marker);
                             sosMarkers.add(marker);
                         }
@@ -420,8 +420,8 @@ public class fragment_map extends Fragment {
             public void onError(String message) {
                 if (getActivity() != null && isAdded()) {
                     getActivity().runOnUiThread(() -> {
-                        Toast.makeText(getContext(), "Failed to load SOS calls: " + message, 
-                            Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "Failed to load SOS calls: " + message,
+                                Toast.LENGTH_SHORT).show();
                     });
                 }
             }
@@ -455,7 +455,7 @@ public class fragment_map extends Fragment {
         } else if (getContext() != null) {
             LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
             if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 if (lastLocation == null) {
                     lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -497,7 +497,7 @@ public class fragment_map extends Fragment {
         } else if (getContext() != null) {
             LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
             if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 if (lastLocation == null) {
                     lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -548,7 +548,7 @@ public class fragment_map extends Fragment {
             for (Marker marker : sosMarkers) {
                 GeoPoint markerPos = marker.getPosition();
                 if (Math.abs(markerPos.getLatitude() - sosCall.getX_coordinate()) < 0.0001 &&
-                    Math.abs(markerPos.getLongitude() - sosCall.getY_coordinate()) < 0.0001) {
+                        Math.abs(markerPos.getLongitude() - sosCall.getY_coordinate()) < 0.0001) {
                     correspondingMarker = marker;
                     break;
                 }
@@ -578,7 +578,7 @@ public class fragment_map extends Fragment {
                                         "Route: %.1f km, ~%.0f min",
                                         distanceKm, durationMinutes),
                                 Toast.LENGTH_LONG).show();
-                                
+
                         // Show return to location button
                         if (fabReturnToLocation != null) {
                             fabReturnToLocation.setVisibility(View.VISIBLE);
@@ -612,8 +612,8 @@ public class fragment_map extends Fragment {
         double deltaLon = Math.toRadians(point2.getLongitude() - point1.getLongitude());
 
         double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-                   Math.cos(lat1) * Math.cos(lat2) *
-                   Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+                Math.cos(lat1) * Math.cos(lat2) *
+                        Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return earthRadius * c;
@@ -633,13 +633,13 @@ public class fragment_map extends Fragment {
                 GeoPoint markerPos = marker.getPosition();
                 // Check if this marker matches the nearest SOS call (comparing with x=lat, y=lon)
                 if (Math.abs(markerPos.getLatitude() - item.sosCall.getX_coordinate()) < 0.0001 &&
-                    Math.abs(markerPos.getLongitude() - item.sosCall.getY_coordinate()) < 0.0001) {
+                        Math.abs(markerPos.getLongitude() - item.sosCall.getY_coordinate()) < 0.0001) {
                     // Highlight this marker with star icon
                     iconManager.highlightAsNearest(marker);
                     // Update the snippet to show distance
                     marker.setSnippet("User: " + item.sosCall.getUsername() +
-                                    "\nTime: " + item.sosCall.getTime() +
-                                    "\nDistance: " + String.format(Locale.getDefault(), "%.2f km", item.distance / 1000.0));
+                            "\nTime: " + item.sosCall.getTime() +
+                            "\nDistance: " + String.format(Locale.getDefault(), "%.2f km", item.distance / 1000.0));
 
                     // Create custom info window for this marker
                     IconManager.CustomInfoWindow infoWindow = new IconManager.CustomInfoWindow(mapView, requireContext());
@@ -696,19 +696,19 @@ public class fragment_map extends Fragment {
                     // Click listener - double click shows accept case button
                     marker.setOnMarkerClickListener((clickedMarker, mapView) -> {
                         long currentTime = System.currentTimeMillis();
-                        
+
                         // Check if this is a double click (within 500ms on same marker)
                         if (lastClickedMarker == clickedMarker && (currentTime - lastClickTime) < 500) {
                             // Double click detected - show accept case button
                             selectedSOSCall = finalSosCall;
                             selectedMarker = finalMarker;
-                            
+
                             // Show the accept case button
                             if (btnAcceptCase != null) {
                                 btnAcceptCase.setText("Accept Case: " + finalSosCall.getUsername());
                                 btnAcceptCase.setVisibility(View.VISIBLE);
                             }
-                            
+
                             // Calculate and draw route
                             if (routeManager != null && myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
                                 GeoPoint currentLocation = myLocationOverlay.getMyLocation();
@@ -747,10 +747,10 @@ public class fragment_map extends Fragment {
                                 // Zoom to show both locations
                                 controller.setZoom(14.0);
                             }
-                            
+
                             // Close the info window
                             clickedMarker.closeInfoWindow();
-                            
+
                             // Reset click tracking
                             lastClickTime = 0;
                             lastClickedMarker = null;
@@ -816,18 +816,18 @@ public class fragment_map extends Fragment {
         double latitude = 0;
         double longitude = 0;
         boolean locationFound = false;
-        
+
         // Try 1: Get from myLocationOverlay
         if (myLocationOverlay != null && myLocationOverlay.getMyLocation() != null) {
             latitude = myLocationOverlay.getMyLocation().getLatitude();
             longitude = myLocationOverlay.getMyLocation().getLongitude();
             locationFound = true;
-        } 
+        }
         // Try 2: Get last known location from LocationManager
         else if (getContext() != null) {
             LocationManager locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
             if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 if (lastLocation == null) {
                     lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
@@ -839,12 +839,12 @@ public class fragment_map extends Fragment {
                 }
             }
         }
-        
+
         if (!locationFound) {
             Toast.makeText(getContext(), "Unable to get current location. Please wait for GPS to acquire signal.", Toast.LENGTH_LONG).show();
             return;
         }
-        
+
         // Record SOS call to Supabase
         final double finalLat = latitude;
         final double finalLon = longitude;
@@ -852,8 +852,8 @@ public class fragment_map extends Fragment {
             @Override
             public void onComplete(boolean success, String message) {
                 if (success) {
-                    Toast.makeText(getContext(), "SOS Emergency Call Initiated!\nLocation: " + 
-                        String.format(Locale.getDefault(), "%.6f, %.6f", finalLat, finalLon), Toast.LENGTH_LONG).show();
+                    Toast.makeText(getContext(), "SOS Emergency Call Initiated!\nLocation: " +
+                            String.format(Locale.getDefault(), "%.6f, %.6f", finalLat, finalLon), Toast.LENGTH_LONG).show();
                     // Reload SOS calls to show the new marker
                     loadAndPlotSOSCalls();
                 } else {
@@ -865,8 +865,8 @@ public class fragment_map extends Fragment {
 
     private void setupSearchAutocomplete() {
         searchResults = new ArrayList<>();
-        suggestionsAdapter = new ArrayAdapter<>(requireContext(), 
-            android.R.layout.simple_list_item_1, new ArrayList<>());
+        suggestionsAdapter = new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_list_item_1, new ArrayList<>());
         suggestionsList.setAdapter(suggestionsAdapter);
         searchHandler = new Handler(Looper.getMainLooper());
         executor = Executors.newSingleThreadExecutor();
@@ -899,11 +899,11 @@ public class fragment_map extends Fragment {
         });
 
         searchEditText.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH || 
-                actionId == EditorInfo.IME_ACTION_DONE ||
-                actionId == EditorInfo.IME_ACTION_GO ||
-                (event != null && event.getAction() == KeyEvent.ACTION_DOWN && 
-                 event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH ||
+                    actionId == EditorInfo.IME_ACTION_DONE ||
+                    actionId == EditorInfo.IME_ACTION_GO ||
+                    (event != null && event.getAction() == KeyEvent.ACTION_DOWN &&
+                            event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
                 // Cancel any pending search operations
                 searchHandler.removeCallbacksAndMessages(null);
                 suggestionsList.setVisibility(View.GONE);
@@ -930,7 +930,7 @@ public class fragment_map extends Fragment {
     private void hideKeyboard() {
         if (getActivity() != null && searchEditText != null) {
             InputMethodManager imm = (InputMethodManager)
-                getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(searchEditText.getWindowToken(), 0);
         }
     }
@@ -953,12 +953,12 @@ public class fragment_map extends Fragment {
                 }
                 // Hide the button after returning to location
                 fabReturnToLocation.setVisibility(View.GONE);
-                
+
                 // Also hide accept case button
                 if (btnAcceptCase != null) {
                     btnAcceptCase.setVisibility(View.GONE);
                 }
-                
+
                 Toast.makeText(getContext(), "Returned to your location", Toast.LENGTH_SHORT).show();
             });
         }
@@ -980,9 +980,9 @@ public class fragment_map extends Fragment {
         executor.execute(() -> {
             try {
                 String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString());
-                String urlString = "https://nominatim.openstreetmap.org/search?format=json&q=" 
-                    + encodedQuery + "&limit=5&addressdetails=1";
-                
+                String urlString = "https://nominatim.openstreetmap.org/search?format=json&q="
+                        + encodedQuery + "&limit=5&addressdetails=1";
+
                 URL url = new URL(urlString);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
@@ -991,7 +991,7 @@ public class fragment_map extends Fragment {
                 conn.setReadTimeout(5000);
 
                 BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream()));
+                        new InputStreamReader(conn.getInputStream()));
                 StringBuilder response = new StringBuilder();
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -1006,9 +1006,9 @@ public class fragment_map extends Fragment {
                 for (int i = 0; i < results.length(); i++) {
                     JSONObject place = results.getJSONObject(i);
                     SearchResult result = new SearchResult(
-                        place.getString("display_name"),
-                        place.getDouble("lat"),
-                        place.getDouble("lon")
+                            place.getString("display_name"),
+                            place.getDouble("lat"),
+                            place.getDouble("lon")
                     );
                     newResults.add(result);
                     displayNames.add(result.displayName);
@@ -1027,9 +1027,9 @@ public class fragment_map extends Fragment {
 
             } catch (Exception e) {
                 if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> 
-                        Toast.makeText(getContext(), "Search failed: " + e.getMessage(), 
-                            Toast.LENGTH_SHORT).show()
+                    getActivity().runOnUiThread(() ->
+                            Toast.makeText(getContext(), "Search failed: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show()
                     );
                 }
             }
@@ -1083,7 +1083,7 @@ public class fragment_map extends Fragment {
             Toast.makeText(getContext(), "Cannot accept case: Invalid SOS ID", Toast.LENGTH_SHORT).show();
             return;
         }
-        
+
         SupabaseManager.INSTANCE.deleteSOSCall(sosCall.getId(), new SupabaseManager.AuthCallback() {
             @Override
             public void onComplete(boolean success, String message) {
@@ -1109,22 +1109,22 @@ public class fragment_map extends Fragment {
         double centerLat = (userLocation.getLatitude() + sosLocation.getLatitude()) / 2;
         double centerLon = (userLocation.getLongitude() + sosLocation.getLongitude()) / 2;
         GeoPoint center = new GeoPoint(centerLat, centerLon);
-        
+
         controller.animateTo(center);
-        
+
         // Calculate appropriate zoom level
         double latDiff = Math.abs(userLocation.getLatitude() - sosLocation.getLatitude());
         double lonDiff = Math.abs(userLocation.getLongitude() - sosLocation.getLongitude());
         double maxDiff = Math.max(latDiff, lonDiff);
-        
+
         int zoom = 15;
         if (maxDiff > 0.1) zoom = 11;
         else if (maxDiff > 0.05) zoom = 12;
         else if (maxDiff > 0.02) zoom = 13;
         else if (maxDiff > 0.01) zoom = 14;
-        
+
         controller.setZoom((double) zoom);
-        
+
         Toast.makeText(getContext(), "Showing route to SOS location", Toast.LENGTH_SHORT).show();
     }
 }

@@ -8,11 +8,18 @@
     android:padding="12dp"
     android:minWidth="200dp">
 
+    <!-- Standard OsmDroid IDs to prevent NullPointerException -->
+    <ImageView
+        android:id="@+id/bubble_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/bubble_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Title"
+        android:text="@string/title"
         android:textColor="#000000"
         android:textSize="14sp"
         android:textStyle="bold"
@@ -22,7 +29,7 @@
         android:id="@+id/bubble_description"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Description"
+        android:text="@string/description"
         android:textColor="#666666"
         android:textSize="12sp"
         android:layout_marginBottom="2dp" />
@@ -31,7 +38,7 @@
         android:id="@+id/bubble_subdescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Distance"
+        android:text="@string/distance"
         android:textColor="#999999"
         android:textSize="11sp"
         android:layout_marginBottom="8dp" />
@@ -40,13 +47,13 @@
         android:id="@+id/bubble_moreinfo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="👆 Tap again for route"
-        android:textColor="#2196F3"
-        android:textSize="10sp"
-        android:textStyle="italic"
+        android:layout_gravity="center"
+        android:layout_marginTop="4dp"
         android:background="#E3F2FD"
         android:padding="8dp"
-        android:layout_gravity="center"
-        android:layout_marginTop="4dp" />
+        android:text="@string/tap_again_for_route"
+        android:textColor="#2196F3"
+        android:textSize="12sp"
+        android:textStyle="italic" />
 
 </LinearLayout>
