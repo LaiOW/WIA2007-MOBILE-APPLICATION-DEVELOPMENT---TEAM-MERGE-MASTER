@@ -29,7 +29,7 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
     @Override
     public void onBindViewHolder(@NonNull FeedViewHolder holder, int position) {
         Post post = postList.get(position);
-        holder.user_name.setText(post.getUserName());
+        holder.user_name.setText(post.getUserName() != null ? post.getUserName() : "Anonymous");
         
         if (post.getTitle() != null && !post.getTitle().isEmpty()) {
             holder.post_title.setText(post.getTitle());
@@ -38,11 +38,10 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
             holder.post_title.setVisibility(View.GONE);
         }
 
-        holder.post_text.setText(post.getContent());
+        holder.post_text.setText(post.getContent() != null ? post.getContent() : "");
 
         if (post.getImageUri() != null && !post.getImageUri().isEmpty()) {
             holder.post_image.setVisibility(View.VISIBLE);
-            // Use Glide to load the image from Firebase URL safely
             Picasso.get()
                  .load(post.getImageUri())
                  .placeholder(R.drawable.ic_launcher_background)
@@ -51,13 +50,19 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
             holder.post_image.setVisibility(View.GONE);
         }
 
-        holder.like_count.setText(String.valueOf(post.getLikeCount()));
-        updateHeartIcon(holder.ic_heart, post.isLiked());
+        int likeCount = post.getLikeCount() != null ? post.getLikeCount() : 0;
+        boolean isLiked = post.isLiked() != null ? post.isLiked() : false;
+
+        holder.like_count.setText(String.valueOf(likeCount));
+        updateHeartIcon(holder.ic_heart, isLiked);
 
         holder.ic_heart.setOnClickListener(v -> {
-            boolean newState = !post.isLiked();
+            boolean currentLiked = post.isLiked() != null ? post.isLiked() : false;
+            int currentCount = post.getLikeCount() != null ? post.getLikeCount() : 0;
+
+            boolean newState = !currentLiked;
             post.setLiked(newState);
-            post.setLikeCount(post.getLikeCount() + (newState ? 1 : -1));
+            post.setLikeCount(currentCount + (newState ? 1 : -1));
             holder.like_count.setText(String.valueOf(post.getLikeCount()));
             updateHeartIcon(holder.ic_heart, newState);
         });
