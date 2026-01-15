@@ -176,6 +176,6 @@
         android:text="Cancel"
         android:layout_marginTop="16dp"
         android:backgroundTint="#CCCCCC"
-        android:textColor="#000000"/>
+        android:textColor="#FF0000"/>
 
 </LinearLayout>
