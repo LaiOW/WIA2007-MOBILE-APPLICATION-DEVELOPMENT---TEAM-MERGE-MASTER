@@ -56,6 +56,14 @@ public class ProfileActivity extends AppCompatActivity {
         // Initialize Views
         ivProfilePic = findViewById(R.id.iv_profile_pic);
         btnChangeImage = findViewById(R.id.btn_change_image);
+        ImageView btnBack = findViewById(R.id.btn_back);
+
+        btnBack.setOnClickListener(v -> {
+            Intent intent = new Intent(ProfileActivity.this, home_page.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+        });
 
         tvEmail = findViewById(R.id.tv_email);
         etName = findViewById(R.id.et_name);
