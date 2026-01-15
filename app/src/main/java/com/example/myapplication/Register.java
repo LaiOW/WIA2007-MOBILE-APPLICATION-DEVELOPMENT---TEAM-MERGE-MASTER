@@ -76,6 +76,11 @@ public class Register extends AppCompatActivity {
                     return;
                 }
 
+                if (password.length() < 6) {
+                    Toast.makeText(Register.this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 SupabaseManager.INSTANCE.signUp(email, password, new SupabaseManager.AuthCallback() {
                     @Override
                     public void onComplete(boolean success, String message) {
