@@ -237,7 +237,7 @@
             android:layout_marginTop="16dp"
             android:text="Log Out"
             android:textColor="#D32F2F"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             app:layout_constraintTop_toBottomOf="@id/btn_save"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
