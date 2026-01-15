@@ -56,6 +56,15 @@ public class ProfileActivity extends AppCompatActivity {
         // Initialize Views
         ivProfilePic = findViewById(R.id.iv_profile_pic);
         btnChangeImage = findViewById(R.id.btn_change_image);
+        ImageView btnBack = findViewById(R.id.btn_back);
+
+        btnBack.setOnClickListener(v -> {
+            Intent intent = new Intent(ProfileActivity.this, home_page.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
+            finish();
+        });
 
         tvEmail = findViewById(R.id.tv_email);
         etName = findViewById(R.id.et_name);
@@ -121,8 +130,11 @@ public class ProfileActivity extends AppCompatActivity {
         btnLogout.setOnClickListener(v -> {
             SupabaseManager.INSTANCE.signOut((success, message) -> {
                 if (success) {
+                    // Clear all saved user data
+                    sharedPreferences.edit().clear().apply();
+
                     Intent intent = new Intent(ProfileActivity.this, Login.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);     
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                     finish();
                 } else {
@@ -138,8 +150,7 @@ public class ProfileActivity extends AppCompatActivity {
                     if (uri != null) {
                         uploadImageToSupabase(uri);
                     }
-                }
-        );
+                });
 
         btnChangeImage.setOnClickListener(v -> pickImageLauncher.launch("image/*"));
     }
@@ -147,10 +158,11 @@ public class ProfileActivity extends AppCompatActivity {
     private void uploadImageToSupabase(Uri uri) {
         try {
             InputStream inputStream = getContentResolver().openInputStream(uri);
-            if (inputStream == null) return;
+            if (inputStream == null)
+                return;
 
             Toast.makeText(this, "Uploading image...", Toast.LENGTH_SHORT).show();
-            
+
             // Create a unique filename
             String fileName = "profile_" + System.currentTimeMillis() + ".jpg";
 
@@ -159,13 +171,13 @@ public class ProfileActivity extends AppCompatActivity {
                 public void onSuccess(String imageUrl) {
                     // Update SharedPreferences with the new remote URL
                     sharedPreferences.edit().putString("profile_image_uri", imageUrl).apply();
-                    
+
                     // Load image into view using Picasso
                     Picasso.get()
                             .load(imageUrl)
                             .placeholder(R.drawable.ic_launcher_background) // Add a placeholder if you have one
                             .into(ivProfilePic);
-                            
+
                     Toast.makeText(ProfileActivity.this, "Profile picture updated!", Toast.LENGTH_SHORT).show();
                 }
 
@@ -198,13 +210,15 @@ public class ProfileActivity extends AppCompatActivity {
             String imageUriString = sharedPreferences.getString("profile_image_uri", null);
             if (imageUriString != null && !imageUriString.isEmpty()) {
                 // Use Picasso to handle both web URLs (http/https) and local files (file://)
-                // invalidate() is not directly available on simple load, but Picasso handles caching.
-                // Forcing reload can be done with memoryPolicy(MemoryPolicy.NO_CACHE) if needed, 
+                // invalidate() is not directly available on simple load, but Picasso handles
+                // caching.
+                // Forcing reload can be done with memoryPolicy(MemoryPolicy.NO_CACHE) if
+                // needed,
                 // but usually the URL change is enough.
                 Picasso.get()
-                       .load(imageUriString)
-                       .placeholder(R.drawable.ic_launcher_background)
-                       .into(ivProfilePic);
+                        .load(imageUriString)
+                        .placeholder(R.drawable.ic_launcher_background)
+                        .into(ivProfilePic);
             }
 
             // Load certificates
@@ -213,9 +227,12 @@ public class ProfileActivity extends AppCompatActivity {
                 String[] certArray = savedCerts.split(",");
                 for (String c : certArray) {
                     selectedCerts.add(c);
-                    if (c.equals(tvCert1.getText().toString())) tvCert1.setSelected(true);
-                    if (c.equals(tvCert2.getText().toString())) tvCert2.setSelected(true);
-                    if (c.equals(tvCert3.getText().toString())) tvCert3.setSelected(true);
+                    if (c.equals(tvCert1.getText().toString()))
+                        tvCert1.setSelected(true);
+                    if (c.equals(tvCert2.getText().toString()))
+                        tvCert2.setSelected(true);
+                    if (c.equals(tvCert3.getText().toString()))
+                        tvCert3.setSelected(true);
                 }
             }
 
@@ -232,7 +249,8 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void updateBadges() {
-        if (badgeContainer == null) return;
+        if (badgeContainer == null)
+            return;
 
         badgeContainer.removeAllViews();
         for (String c : selectedCerts) {
@@ -242,7 +260,7 @@ public class ProfileActivity extends AppCompatActivity {
             card.setLayoutParams(params);
             card.setRadius(24);
             card.setCardElevation(4);
-            card.setContentPadding(0,0,0,0);
+            card.setContentPadding(0, 0, 0, 0);
 
             switch (c) {
                 case "Helped more than 10 incidents":
@@ -262,8 +280,7 @@ public class ProfileActivity extends AppCompatActivity {
             innerLayout.setOrientation(LinearLayout.VERTICAL);
             innerLayout.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT
-            ));
+                    LinearLayout.LayoutParams.MATCH_PARENT));
             innerLayout.setGravity(android.view.Gravity.CENTER);
 
             Integer drawableId = certBadgeMap.get(c);

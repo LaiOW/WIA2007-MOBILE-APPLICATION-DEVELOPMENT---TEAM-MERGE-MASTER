@@ -7,6 +7,15 @@
     android:background="#FFFFFF"
     tools:context=".HomeFragment">
 
+    <View
+        android:id="@+id/headerBackground"
+        android:layout_width="0dp"
+        android:layout_height="120dp"
+        android:background="#D32F2F"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <TextView
         android:id="@+id/textView"
         android:layout_width="0dp"
@@ -15,25 +24,24 @@
         android:layout_marginTop="32dp"
         android:layout_marginEnd="32dp"
         android:text="Community\nFeed"
-        android:textColor="#1E232C"
+        android:textColor="#FFFFFF"
         android:textSize="30sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/tvUsernameTop"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivProfilePicHome"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginTop="32dp"
         android:layout_marginEnd="32dp"
-        android:text="@string/username"
-        android:textColor="#FF1100"
-        android:textSize="16sp"
-        android:textStyle="bold"
         android:clickable="true"
         android:focusable="true"
+        android:scaleType="centerCrop"
+        android:src="@drawable/default_avatar"
+        app:shapeAppearanceOverlay="@style/CircleImage"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

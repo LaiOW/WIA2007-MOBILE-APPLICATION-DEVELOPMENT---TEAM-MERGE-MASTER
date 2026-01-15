@@ -21,6 +21,21 @@
             android:background="#FF1100"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_margin="16dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="@android:color/white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:contentDescription="Back"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
         <!-- Profile Picture -->
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/iv_profile_pic"
@@ -88,6 +103,8 @@
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:hint="@string/email_address"
                     app:startIconDrawable="@android:drawable/ic_dialog_email"
+                    android:textColorHint="#000000"
+                    app:hintTextColor="#000000"
                     android:layout_marginBottom="12dp">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -97,7 +114,9 @@
                         android:focusable="false"
                         android:clickable="false"
                         android:cursorVisible="false"
-                        android:textColor="#757575" />
+                        android:textStyle="bold"
+                        android:paddingTop="16dp"
+                        android:textColor="#000000" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -107,12 +126,15 @@
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:hint="@string/display_name"
                     app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+                    android:textColorHint="#000000"
+                    app:hintTextColor="#000000"
                     android:layout_marginBottom="12dp">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_name"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:textColor="#000000"
                         android:inputType="textPersonName" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -122,6 +144,8 @@
                     android:layout_height="wrap_content"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:hint="@string/bio"
+                    android:textColorHint="#000000"
+                    app:hintTextColor="#000000"
                     app:startIconDrawable="@android:drawable/ic_menu_info_details">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -130,6 +154,7 @@
                         android:layout_height="wrap_content"
                         android:inputType="textMultiLine"
                         android:minLines="2"
+                        android:textColor="#000000"
                         android:gravity="top" />
                 </com.google.android.material.textfield.TextInputLayout>
 
