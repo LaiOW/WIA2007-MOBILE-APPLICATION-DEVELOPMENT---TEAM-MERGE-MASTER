@@ -1,8 +1,14 @@
 package com.example.myapplication;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -50,6 +56,17 @@ public class Register extends AppCompatActivity {
         buttonReg = findViewById(R.id.btn_register);
         progressBar = findViewById(R.id.progressBar);
         textView = findViewById(R.id.loginNow);
+
+        // Apply SpannableString for better UX
+        String fullText = "Already have an account? Login Now";
+        SpannableString spannableString = new SpannableString(fullText);
+        int start = fullText.indexOf("Login Now");
+        int end = fullText.length();
+
+        // Specific color and Bold style for "Login Now"
+        spannableString.setSpan(new ForegroundColorSpan(Color.parseColor("#FF1100")), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spannableString.setSpan(new StyleSpan(Typeface.BOLD), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        textView.setText(spannableString);
 
         textView.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -1,8 +1,14 @@
 package com.example.myapplication;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -28,7 +34,7 @@ public class Login extends AppCompatActivity {
     public void onStart() {
         super.onStart();
         if (SupabaseManager.INSTANCE.isLoggedIn()) {
-            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            Intent intent = new Intent(getApplicationContext(), home_page.class);
             startActivity(intent);
             finish();
         }
@@ -51,6 +57,17 @@ public class Login extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         textView = findViewById(R.id.registerNow);
 
+        // Apply SpannableString for better UX
+        String fullText = "Don't have an account? Register Now";
+        SpannableString spannableString = new SpannableString(fullText);
+        int start = fullText.indexOf("Register Now");
+        int end = fullText.length();
+
+        // Specific color and Bold style for "Register Now"
+        spannableString.setSpan(new ForegroundColorSpan(Color.parseColor("#FF1100")), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spannableString.setSpan(new StyleSpan(Typeface.BOLD), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        textView.setText(spannableString);
+
         textView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -69,12 +86,12 @@ public class Login extends AppCompatActivity {
 
                 if (TextUtils.isEmpty(email)) {
                     progressBar.setVisibility(View.GONE);
-                    Toast.makeText(Login.this, "Enter email", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Login.this, "Please enter your email!", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (TextUtils.isEmpty(password)) {
                     progressBar.setVisibility(View.GONE);
-                    Toast.makeText(Login.this, "Enter password", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Login.this, "Please enter your password!", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
