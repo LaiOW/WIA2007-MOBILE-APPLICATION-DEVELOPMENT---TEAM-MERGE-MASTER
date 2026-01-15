@@ -29,4 +29,8 @@
     <string name="alert_icon_desc">Alert Icon</string>
     <string name="welcome_back_glad_nto_see_you_again">Welcome back! Glad\nto see you, Again!</string>
     <string name="don_t_have_an_account_register_now">Don\'t have an account? <u>Register Now</u></string>
+    <string name="title">Title</string>
+    <string name="description">Description</string>
+    <string name="distance">Distance</string>
+    <string name="tap_again_for_route">👆 Tap again for route</string>
 </resources>
