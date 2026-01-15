@@ -104,7 +104,7 @@ public class ProfileActivity extends AppCompatActivity {
             String bioText = etBio.getText() != null ? etBio.getText().toString().trim() : "";
 
             if (newName.isEmpty()) {
-                Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Pls enter name , this is required section", Toast.LENGTH_SHORT).show();
                 return;
             }
 
