@@ -54,6 +54,12 @@ public class CreatePostActivity extends AppCompatActivity {
             String postContent = editTextPostContent.getText() != null ? editTextPostContent.getText().toString() : "";
 
             if (!postContent.isEmpty()) {
+
+                if (postContent.length() < 10) {
+                    Toast.makeText(this, "Post content is too short (min 10 chars)", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 // Disable button to prevent double clicks
                 buttonSubmitPost.setEnabled(false);
                 buttonSubmitPost.setText("Posting...");
