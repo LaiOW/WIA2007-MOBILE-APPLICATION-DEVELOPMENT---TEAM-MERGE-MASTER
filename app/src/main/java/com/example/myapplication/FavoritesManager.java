@@ -49,6 +49,12 @@ public class FavoritesManager {
     }
 
     public void addFavorite(String location) {
+        for (String fav : favoritesList) {
+            if (fav.equalsIgnoreCase(location)) {
+                return; // Already exists
+            }
+        }
+
         if (!favoritesList.contains(location)) {
             favoritesList.add(location);
             saveFavorites();
