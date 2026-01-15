@@ -69,7 +69,7 @@ public class Login extends AppCompatActivity {
 
                 if (TextUtils.isEmpty(email)) {
                     progressBar.setVisibility(View.GONE);
-                    Toast.makeText(Login.this, "Enter email", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Login.this, "Pls enter your email address", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (TextUtils.isEmpty(password)) {
