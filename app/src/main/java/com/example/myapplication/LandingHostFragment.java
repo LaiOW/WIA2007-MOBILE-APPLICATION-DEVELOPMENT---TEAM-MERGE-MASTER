@@ -29,7 +29,11 @@ public class LandingHostFragment extends Fragment {
         viewPager.setAdapter(new LandingPagerAdapter(this));
 
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
-            // Empty tab; we only use the indicator
+            if (position == 0) {
+                tab.setContentDescription("Welcome Page");
+            } else {
+                tab.setContentDescription("Get Started Page");
+            }
         }).attach();
 
         return view;
