@@ -33,4 +33,27 @@
     <string name="description">Description</string>
     <string name="distance">Distance</string>
     <string name="tap_again_for_route">👆 Tap again for route</string>
+    <string name="select_emergency_type">Select Emergency Type</string>
+    <string name="medical">Medical</string>
+    <string name="accident">Accident</string>
+    <string name="mental_health">Mental Health</string>
+    <string name="other">Other</string>
+    <string name="cancel">Cancel</string>
+    <string name="username">Username</string>
+    <string name="swipe_right_to_see_how_we_can_help_you">Swipe right to see how we can help you.</string>
+    <string name="ready_to_join">Ready to Join?</string>
+    <string name="my_favorites">My Favorites</string>
+    <string name="enter_address_or_location">Enter address or location</string>
+    <string name="add">Add</string>
+    <string name="change_profile_picture">Change Profile Picture</string>
+    <string name="email_address">Email Address</string>
+    <string name="display_name">Display Name</string>
+    <string name="bio">Bio</string>
+    <string name="certifications">Certifications</string>
+    <string name="helped_more_than_10_incidents">Helped more than 10 incidents</string>
+    <string name="have_knowledge_in_first_aid">Have knowledge in First Aid</string>
+    <string name="posted_more_than_10_incidents">Posted more than 10 incidents</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="log_out">Log Out</string>
+    <string name="user_details">User Details</string>
 </resources>

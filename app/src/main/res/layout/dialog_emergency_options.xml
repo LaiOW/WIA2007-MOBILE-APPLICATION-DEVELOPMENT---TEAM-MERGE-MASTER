@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Emergency Type"
+        android:text="@string/select_emergency_type"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="#000000"
@@ -48,13 +48,13 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:src="@drawable/ic_medical"
-                    android:contentDescription="Medical"
+                    android:contentDescription="@string/medical"
                     app:tint="#FF0000"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Medical"
+                    android:text="@string/medical"
                     android:layout_marginTop="8dp"
                     android:textStyle="bold"
                     android:textColor="#000000"/>
@@ -83,13 +83,13 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:src="@drawable/ic_car_accident"
-                    android:contentDescription="Accident"
+                    android:contentDescription="@string/accident"
                     app:tint="#FF0000"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Accident"
+                    android:text="@string/accident"
                     android:layout_marginTop="8dp"
                     android:textStyle="bold"
                     android:textColor="#000000"/>
@@ -118,13 +118,13 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:src="@drawable/ic_mental_health"
-                    android:contentDescription="Mental Health"
+                    android:contentDescription="@string/mental_health"
                     app:tint="#FF0000"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Mental Health"
+                    android:text="@string/mental_health"
                     android:layout_marginTop="8dp"
                     android:textStyle="bold"
                     android:textColor="#000000"
@@ -154,13 +154,13 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:src="@drawable/ic_alert"
-                    android:contentDescription="Other"
+                    android:contentDescription="@string/other"
                     app:tint="#FF0000"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Other"
+                    android:text="@string/other"
                     android:layout_marginTop="8dp"
                     android:textStyle="bold"
                     android:textColor="#000000"/>
@@ -173,7 +173,7 @@
         android:id="@+id/btnCancelEmergency"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Cancel"
+        android:text="@string/cancel"
         android:layout_marginTop="16dp"
         android:backgroundTint="#CCCCCC"
         android:textColor="#000000"/>
