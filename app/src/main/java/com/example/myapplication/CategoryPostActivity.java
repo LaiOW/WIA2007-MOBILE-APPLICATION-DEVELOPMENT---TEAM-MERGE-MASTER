@@ -17,6 +17,8 @@ public class CategoryPostActivity extends AppCompatActivity {
         String categoryName = getIntent().getStringExtra("categoryName");
         setTitle(categoryName);
 
+        android.widget.Toast.makeText(this, "Viewing " + categoryName + " posts", android.widget.Toast.LENGTH_SHORT).show();
+
         RecyclerView recyclerCategoryPosts = findViewById(R.id.recycler_category_posts);
         recyclerCategoryPosts.setLayoutManager(new LinearLayoutManager(this));
 
