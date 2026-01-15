@@ -50,7 +50,7 @@ public class LandingActivity extends AppCompatActivity {
                     Toast.makeText(this, "Some features may not work without GPS", Toast.LENGTH_LONG).show();
                     dialog.dismiss();
                 })
-                .setCancelable(false)
+                .setCancelable(true)
                 .show();
         }
     }
