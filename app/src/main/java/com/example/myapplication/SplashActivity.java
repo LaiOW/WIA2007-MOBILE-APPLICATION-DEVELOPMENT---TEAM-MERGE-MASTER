@@ -13,6 +13,15 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
+        android.widget.ImageView ivLogo = findViewById(R.id.iv_logo);
+        if (ivLogo != null) {
+            com.squareup.picasso.Picasso.get()
+                    .load(R.drawable.ic_app_logo)
+                    .resize(500, 500) // Downsample to reasonable size
+                    .centerInside()
+                    .into(ivLogo);
+        }
+
         // Delay for 1 second (1000 milliseconds)
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             Intent intent = new Intent(SplashActivity.this, LandingActivity.class);
