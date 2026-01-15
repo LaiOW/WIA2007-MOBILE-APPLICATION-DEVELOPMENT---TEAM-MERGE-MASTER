@@ -17,7 +17,9 @@ public class MainActivity extends AppCompatActivity {
             finish();
         } else {
             // Start the background SOS monitoring service
-            Intent serviceIntent = new Intent(this, SOSNotificationService.class);
+            Intent serviceIntent = new Intent(this,
+
+                    SOSNotificationService.class);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent);
             } else {

@@ -166,38 +166,38 @@
 
                 <TextView
                     android:id="@+id/tv_cert_1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Helped more than 10 incidents"
-                    android:textSize="14sp"
-                    android:padding="12dp"
+                    android:layout_width="340dp"
+                    android:layout_height="83dp"
+                    android:layout_marginBottom="8dp"
                     android:background="@drawable/selectable_cert"
                     android:clickable="true"
                     android:focusable="true"
-                    android:layout_marginBottom="8dp"/>
+                    android:padding="12dp"
+                    android:text="Helped more than 10 incidents"
+                    android:textSize="14sp" />
 
                 <TextView
                     android:id="@+id/tv_cert_2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Have knowledge in First Aid"
-                    android:textSize="14sp"
-                    android:padding="12dp"
+                    android:layout_width="334dp"
+                    android:layout_height="78dp"
+                    android:layout_marginBottom="8dp"
                     android:background="@drawable/selectable_cert"
                     android:clickable="true"
                     android:focusable="true"
-                    android:layout_marginBottom="8dp"/>
+                    android:padding="12dp"
+                    android:text="Have knowledge in First Aid"
+                    android:textSize="14sp" />
 
                 <TextView
                     android:id="@+id/tv_cert_3"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Posted more than 10 incidents"
-                    android:textSize="14sp"
-                    android:padding="12dp"
+                    android:layout_width="337dp"
+                    android:layout_height="68dp"
                     android:background="@drawable/selectable_cert"
                     android:clickable="true"
-                    android:focusable="true"/>
+                    android:focusable="true"
+                    android:padding="12dp"
+                    android:text="Posted more than 10 incidents"
+                    android:textSize="14sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
