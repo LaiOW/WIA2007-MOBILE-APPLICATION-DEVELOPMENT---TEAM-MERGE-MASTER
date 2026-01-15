@@ -29,4 +29,10 @@ public class CategoryPostActivity extends AppCompatActivity {
         FeedAdapter adapter = new FeedAdapter(postList);
         recyclerCategoryPosts.setAdapter(adapter);
     }
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
+    }
+
 }
