@@ -1,52 +1,54 @@
-# MergeAid
+# 🚨 MergeAid
 
-MergeAid is an Android emergency support app designed to help users report SOS situations, view emergency cases on a live map, and stay connected through a community feed.
+![Android](https://img.shields.io/badge/Android-29%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
+![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
-The app combines location tracking, real-time SOS monitoring, user accounts, profile management, favorites, and a social-style post feed to support emergency response workflows.
+MergeAid is an Android emergency support app built to help users report SOS situations, monitor nearby incidents on a live map, and stay connected through a community feed.
 
-> Important: MergeAid is a support tool, not a replacement for official emergency services. If someone is in immediate danger, contact local emergency services first.
+It combines location tracking, realtime alerts, user profiles, favorites, and emergency routing into one fast, mobile-first experience.
 
-## Overview
+> ⚠️ MergeAid is a support tool, not a replacement for official emergency services. If someone is in immediate danger, contact local emergency services first.
 
-MergeAid is built around two main experiences:
+## ✨ What Makes It Special
 
-1. A map-based emergency dashboard that displays SOS calls, nearby incidents, route guidance, and live alerts.
-2. A community feed where users can create posts, browse content, manage a profile, and save favorite locations for quick access.
+- 📍 Live emergency map with the user's current location
+- 🚨 SOS reporting with stored coordinates and timestamps
+- 🔔 Foreground notification service for nearby SOS alerts
+- 🛰️ Supabase Realtime updates for live incident tracking
+- 🧭 Route guidance from the user to an SOS location
+- 🔎 Search and autocomplete for places on the map
+- ⭐ Favorites for quick location access
+- 📝 Community feed with image uploads and post creation
+- 👤 Profile page with badges, bio, and profile picture
+- 🔥 Trending and category post screens
+
+## 🧠 Big Picture
+
+MergeAid is built around two core experiences:
+
+1. 🗺️ A map-based emergency dashboard that displays SOS calls, nearby incidents, route guidance, and live alerts.
+2. 💬 A community space where users can create posts, browse content, manage a profile, and save favorite locations for quick access.
 
 The app uses Supabase for authentication, database storage, realtime updates, and image storage. It also uses OpenStreetMap via osmdroid for the map interface.
 
-## Features
+## 🛠️ Tech Stack
 
-- Email and password authentication with Supabase
-- Splash, landing, login, and registration flow
-- Emergency map with the user's current location
-- SOS call reporting with stored coordinates and timestamp
-- Live SOS marker updates from Supabase Realtime
-- Nearby SOS notification service running in the foreground
-- Route drawing from the user to an SOS location
-- Search and autocomplete for places on the map
-- Favorites list for quick location access
-- Community feed for creating and viewing posts
-- Image upload support for post attachments and profile photos
-- Profile page with display name, bio, certificates, and badges
-- Trending and category post screens
+- 📱 Android Studio
+- ☕ Java
+- 🔷 Kotlin
+- 🧩 XML layouts
+- 🔐 Supabase Auth
+- 🗃️ Supabase PostgREST
+- 🪣 Supabase Storage
+- ⚡ Supabase Realtime
+- 🗺️ osmdroid / OpenStreetMap
+- 🖼️ Picasso for image loading
+- 🎨 Material Components
+- 🧭 Navigation Component
 
-## Tech Stack
-
-- Android Studio
-- Java
-- Kotlin
-- XML layouts
-- Supabase Auth
-- Supabase PostgREST
-- Supabase Storage
-- Supabase Realtime
-- osmdroid / OpenStreetMap
-- Picasso for image loading
-- Material Components
-- Navigation Component
-
-## Project Structure
+## 🧱 Project Map
 
 - `app/src/main/java/com/example/myapplication/MainActivity.java` - app entry point after login, starts SOS monitoring
 - `app/src/main/java/com/example/myapplication/home_page.java` - main home screen with ViewPager tabs
@@ -59,7 +61,7 @@ The app uses Supabase for authentication, database storage, realtime updates, an
 - `app/src/main/java/com/example/myapplication/SOSNotificationService.java` - foreground service for nearby SOS notifications
 - `app/src/main/java/com/example/myapplication/SupabaseManager.kt` - Supabase auth, database, storage, and realtime access
 
-## Requirements
+## 📲 Requirements
 
 - Android Studio Hedgehog or newer is recommended
 - JDK 17
@@ -67,9 +69,9 @@ The app uses Supabase for authentication, database storage, realtime updates, an
 - Minimum Android version: API 29
 - A Supabase project with Auth, Postgres, Storage, and Realtime enabled
 
-## Permissions Used
+## 🔐 Permissions
 
-The app requests these Android permissions:
+MergeAid requests these permissions:
 
 - `INTERNET`
 - `ACCESS_NETWORK_STATE`
@@ -81,11 +83,11 @@ The app requests these Android permissions:
 - `POST_NOTIFICATIONS`
 - `WAKE_LOCK`
 
-These permissions are used for map access, SOS tracking, realtime alerts, and the foreground monitoring service.
+These are used for map access, SOS tracking, realtime alerts, and the foreground monitoring service.
 
-## Backend Setup
+## 🗃️ Backend Setup
 
-MergeAid expects a Supabase backend. The code currently uses the following resources:
+MergeAid expects a Supabase backend. The app currently uses:
 
 - `posts` table for community posts
 - `SOS calls` table for emergency reports
@@ -119,7 +121,7 @@ The app expects SOS records with:
 
 The app subscribes to inserts on the `SOS calls` table, so realtime updates should be enabled for that table.
 
-## How the App Works
+## 🧭 How It Works
 
 ### 1. Launch flow
 
@@ -154,7 +156,7 @@ The app subscribes to inserts on the `SOS calls` table, so realtime updates shou
 - Favorite locations are stored locally in shared preferences.
 - Selecting a favorite returns the map to that location search.
 
-## Installation
+## 🚀 Installation
 
 1. Clone the repository.
 2. Open the project in Android Studio.
@@ -162,7 +164,7 @@ The app subscribes to inserts on the `SOS calls` table, so realtime updates shou
 4. Ensure your device or emulator has location services enabled.
 5. Build and run the app on an Android device or emulator.
 
-## Running the App
+## ▶️ Running the App
 
 ### From Android Studio
 
@@ -173,7 +175,7 @@ The app subscribes to inserts on the `SOS calls` table, so realtime updates shou
 
 ### From the command line
 
-If your environment is configured for Gradle, you can use the standard Android Gradle wrapper:
+If your environment is configured for Gradle, use the Android Gradle wrapper:
 
 ```bash
 ./gradlew assembleDebug
@@ -185,28 +187,28 @@ On Windows:
 gradlew.bat assembleDebug
 ```
 
-## Default App Behavior
+## 🧩 Default Behavior
 
 - The app starts from `SplashActivity`.
 - Logged-in users are redirected to `home_page`.
 - Logged-out users see the landing/login flow.
 - The main map and SOS monitoring require location permissions.
 
-## Notes for Contributors
+## 🤝 Notes for Contributors
 
 - Some screens contain scaffolded or sample data, such as the trending list.
 - The map and SOS features depend on a working Supabase backend and location services.
 - The app uses both Java and Kotlin sources, so keep interoperability in mind when adding new models or callbacks.
 - Avoid hard-coding sensitive backend credentials in new code.
 
-## Troubleshooting
+## 🛟 Troubleshooting
 
 - If the map is blank, check location permissions and GPS availability.
 - If SOS markers do not appear, verify the Supabase table name, schema, and realtime configuration.
 - If image uploads fail, confirm that the `Posts` bucket exists and storage permissions are correct.
 - If login fails, confirm that Supabase Auth is enabled and the project credentials are valid.
 
-## License
+## 📄 License
 
 This project is distributed under the terms of the repository license.
 
